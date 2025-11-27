@@ -4,6 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>아빠표 연산 학습지 (A4 인쇄 최적화)</title>
+<!-- html2pdf.js CDN 추가 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
   /* Reset */
   * { box-sizing: border-box; margin:0; padding:0; }
@@ -22,20 +24,20 @@
   .btn-generate { background:#4f46e5; color:#fff; }
   .btn-reset { background:#e5e7eb; color:#374151; }
   .btn-answer { background:#16a34a; color:#fff; }
-  .btn-print { background:#111827; color:#fff; }
+  .btn-print { background:#111827; color:#fff; } /* 버튼 텍스트는 "PDF 다운로드"로 변경 가능 */
   input[type=number] { padding:8px; width:80px; border-radius:6px; border:1px solid #d1d5db; text-align:center; font-weight:700; }
   /* Print-area basic message */
   .message { text-align:center; color:#9ca3af; padding:56px 0; }
   /* Worksheet (A4) */
   .worksheet {
     width:210mm; /* A4 width */
-    min-height:297mm; /* allow flexible height but not shrink too much */
+    height:297mm; /* fixed height로 변경, 초과 방지 */
     padding:15mm; /* inner margin for printable area */
     margin: 0 auto 18px;
     background:#fff;
     box-shadow:0 4px 10px rgba(0,0,0,.06);
     page-break-after: always; /* ensure each worksheet is its own printed page */
-    overflow:visible;
+    overflow:hidden; /* 넘침 콘텐츠 숨김 */
     box-sizing:border-box;
     display:block;
   }
@@ -69,7 +71,7 @@
   .answer-box { width:96px; height:36px; border:2px solid #d1d5db; border-radius:6px; margin-left:12px; }
   .ws-footer { text-align:center; margin-top:8px; color:#9ca3af; font-weight:700; }
   /* Answer sheet */
-  .answer-sheet { width:210mm; min-height:297mm; padding:15mm; margin:0 auto 18px; background:#fff; box-shadow:0 4px 10px rgba(0,0,0,.06); page-break-after:always; }
+  .answer-sheet { width:210mm; height:297mm; /* fixed for A4 */ padding:15mm; margin:0 auto 18px; background:#fff; box-shadow:0 4px 10px rgba(0,0,0,.06); page-break-after:always; overflow:hidden; }
   .answer-sheet h2 { text-align:center; margin-bottom:12px; }
   .answer-day { margin-bottom:8px; font-weight:700; color:#374151; }
   /* Print overrides */
@@ -77,7 +79,7 @@
     body { background:white; padding:0; }
     .control { display:none !important; }
     .container { padding:0; }
-    .worksheet, .answer-sheet { box-shadow:none; margin:0; }
+    .worksheet, .answer-sheet { box-shadow:none; margin:0; height:auto; /* print 시 flexible */ }
     @page { size: A4; margin: 0; } /* Use printer margins or 0 depending on printer support */
   }
   /* small screen convenience */
@@ -106,7 +108,7 @@
           <button class="btn btn-generate" id="genBtn">✨ 문제 생성</button>
           <button class="btn btn-reset" id="resetBtn">↻ 초기화</button>
           <button class="btn btn-answer" id="answerBtn" disabled>📋 답안지 출력</button>
-          <button class="btn btn-print" id="printBtn" disabled>🖨️ 인쇄</button>
+          <button class="btn btn-print" id="printBtn" disabled>📥 PDF 다운로드</button> <!-- 텍스트 변경 -->
         </div>
       </div>
     </div>
@@ -193,39 +195,30 @@
   genBtn.addEventListener('click', generateProblems);
   resetBtn.addEventListener('click', resetAll);
   answerBtn.addEventListener('click', toggleAnswer);
-  // 수정: 새 윈도우로 print 워크어라운드
+  // 수정: PDF 다운로드로 변경
   printBtn.addEventListener('click', () => {
-    const printWindow = window.open('', '_blank', 'width=800,height=600');
-    const content = printArea.innerHTML; // 동적 콘텐츠
-    const styles = document.querySelector('style').outerHTML; // 스타일 복사
-    printWindow.document.write(`
-      <html>
-      <head>
-        <meta charset="utf-8" />
-        <title>Print</title>
-        ${styles}
-        <style>
-          body { background:white; padding:0; }
-          .control, #message { display:none !important; } /* 제어판 숨김 */
-          .container { padding:0; max-width:none; }
-          .worksheet, .answer-sheet { box-shadow:none; margin:0 auto; page-break-after:always; }
-          @page { size: A4; margin:0; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          ${content}
-        </div>
-      </body>
-      </html>
-    `);
-    printWindow.document.close();
-    // 로드 후 print 호출 (iOS에서 지연 필요)
+    // 제어판 숨김 (PDF 생성 시)
+    document.querySelector('.control').style.display = 'none';
+    message.style.display = 'none';
+
+    // PDF 옵션: A4, 페이지 브레이크, 파일명
+    const opt = {
+      margin: 0,
+      filename: 'math_worksheet.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 }, // 고해상도
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css'], avoid: ['.worksheet', '.answer-sheet'] } // 각 시트 별 페이지
+    };
+
+    // DOM 업데이트 후 PDF 생성 (동적 콘텐츠 보장)
     setTimeout(() => {
-      printWindow.print();
-      // 선택: print 후 창 닫기 (iOS에서 print 대화 후 자동 닫기)
-      // printWindow.close();
-    }, 500); // 500ms; 조정 가능
+      html2pdf().set(opt).from(printArea).save().then(() => {
+        // PDF 후 제어판 복구
+        document.querySelector('.control').style.display = 'block';
+        if (!worksheets.length) message.style.display = 'block';
+      });
+    }, 100); // 짧은 지연
   });
   // Render helpers
   function createWorksheetHTML(day, problems, op, title){

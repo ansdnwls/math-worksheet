@@ -4,316 +4,224 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>아빠표 연산 학습지 (A4 인쇄 최적화)</title>
-<!-- html3pdf CDN (포크 버전) -->
+<!-- html3pdf CDN -->
 <script src="https://unpkg.com/html3pdf@latest/dist/html3pdf.bundle.min.js"></script>
-<!-- html2canvas CDN (이미지 저장용) -->
+<!-- html2canvas CDN -->
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-<!-- jsZip CDN (ZIP 압축용) -->
+<!-- jsZip CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<!-- FileSaver.js CDN (iOS 다운로드 호환) -->
+<!-- FileSaver.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <style>
-  /* Reset */
-  * { box-sizing: border-box; margin:0; padding:0; }
-  html,body { height:100%; }
-  body { font-family: Arial, Helvetica, sans-serif; background:#f3f4f6; padding:28px; }
-  /* Container */
-  .container { max-width:980px; margin:0 auto; }
-  /* Control panel (hidden when printing) */
-  .control { background:#fff; border-radius:12px; padding:16px; box-shadow:0 6px 18px rgba(0,0,0,.06); margin-bottom:20px; }
-  .control-row { display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
-  .controls-left { display:flex; gap:10px; align-items:center; }
-  .controls-right { display:flex; gap:8px; align-items:center; }
-  .btn { border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; }
-  .btn-diff { background:#f3f4f6; color:#374151; }
-  .btn-diff.active { background:#2563eb; color:#fff; box-shadow:0 4px 10px rgba(37,99,235,.14); }
-  .btn-generate { background:#4f46e5; color:#fff; }
-  .btn-reset { background:#e5e7eb; color:#374151; }
-  .btn-answer { background:#16a34a; color:#fff; }
-  .btn-print { background:#111827; color:#fff; } 
-  input[type=number] { padding:8px; width:80px; border-radius:6px; border:1px solid #d1d5db; text-align:center; font-weight:700; }
-  /* Print-area basic message */
-  .message { text-align:center; color:#9ca3af; padding:56px 0; }
-  /* Worksheet (A4) */
-  .worksheet {
-    width:210mm; /* A4 width */
-    height:297mm; /* fixed height로 변경, 초과 방지 */
-    padding:15mm; /* inner margin for printable area */
-    margin: 0 auto 18px;
-    background:#fff;
-    box-shadow:0 4px 10px rgba(0,0,0,.06);
-    page-break-after: always; /* ensure each worksheet is its own printed page */
-    overflow:hidden; /* 넘침 콘텐츠 숨김 */
-    box-sizing:border-box;
-    display:block;
-  }
-  /* Header */
-  .ws-header { text-align:center; margin-bottom:8px; }
-  .ws-title { font-size:28px; font-weight:900; display:inline-block; padding-bottom:8px; border-bottom:4px solid #e5e7eb; }
-  .day-num { font-size:40px; color:#f59e0b; margin-right:8px; font-family:serif; }
-  .ws-info { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; margin-top:12px; margin-bottom:8px; }
-  .info-group { display:flex; gap:8px; align-items:center; }
-  .info-field { width:48px; height:32px; border:1px solid #cbd5e1; border-radius:6px; text-align:center; font-weight:700; }
-  /* Content block: use grid for stable heights */
-  .ws-content { display:block; border-top:2px solid #000; border-bottom:2px solid #000; margin-top:8px; height: calc(100% - 132px); }
-  /* height calc assumes header + footer ~132px; ensures left-grid and right-list share available vertical space */
-  .columns { display:grid; grid-template-columns: 1fr 1fr; height:100%; }
-  /* Left: 2x5 grid */
-  .left-grid { display:grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(5, 1fr); gap:0; border-right:2px solid #000; height:100%; }
-  .problem-cell { padding:12px; display:flex; align-items:center; justify-content:center; border-right:1px solid #e5e7eb; border-bottom:1px solid #e5e7eb; }
-  .problem-cell:nth-child(2n) { border-right:none; }
-  .problem-cell:nth-child(n+9) { border-bottom:none; }
-  .vertical-problem { width:100%; display:flex; flex-direction:column; align-items:flex-end; font-family:monospace; font-size:28px; font-weight:800; }
-  .vertical-problem .num1 { margin-bottom:6px; }
-  .vertical-problem .op-row { width:100%; display:flex; justify-content:flex-end; align-items:center; gap:8px; }
-  .vertical-problem .op { margin-right:auto; padding-right:8px; } /* operator placed left inside row */
-  .vertical-problem .line { width:100%; border-top:2px solid #000; margin-top:8px; }
-  .vertical-problem .answer-space { height:44px; }
-  /* Right: 10 horizontal lines */
-  .right-list { display:grid; grid-template-rows: repeat(10, 1fr); height:100%; padding-left:12px; }
-  .horizontal-problem { display:flex; align-items:center; padding-left:8px; font-family:monospace; font-size:18px; font-weight:700; border-bottom:1px solid #e5e7eb; }
-  .horizontal-problem:last-child { border-bottom:none; }
-  .horizontal-problem span { margin-right:8px; }
-  .answer-box { width:96px; height:36px; border:2px solid #d1d5db; border-radius:6px; margin-left:12px; }
-  .ws-footer { text-align:center; margin-top:8px; color:#9ca3af; font-weight:700; }
-  /* Answer sheet */
-  .answer-sheet { width:210mm; height:297mm; /* fixed for A4 */ padding:15mm; margin:0 auto 18px; background:#fff; box-shadow:0 4px 10px rgba(0,0,0,.06); page-break-after:always; overflow:hidden; }
-  .answer-sheet h2 { text-align:center; margin-bottom:12px; }
-  .answer-day { margin-bottom:8px; font-weight:700; color:#374151; }
-  /* Print overrides */
-  @media print {
-    body { background:white; padding:0; }
-    .control { display:none !important; }
-    .container { padding:0; }
-    .worksheet, .answer-sheet { box-shadow:none; margin:0; height:auto; /* print 시 flexible */ }
-    @page { size: A4; margin: 0; } /* Use printer margins or 0 depending on printer support */
-  }
-  /* small screen convenience */
-  @media (max-width:760px) {
-    body { padding:12px; }
-    .container { padding:0 8px; }
-  }
+/* ===== RESET ===== */
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,Helvetica,sans-serif;background:#f3f4f6;padding:28px;}
+.container{max-width:980px;margin:0 auto;}
+
+/* ===== CONTROL PANEL ===== */
+.control{background:#fff;border-radius:12px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,.06);margin-bottom:20px;}
+.control-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;}
+.btn{border:0;padding:8px 12px;border-radius:8px;font-weight:700;cursor:pointer;}
+.btn-diff{background:#e5e7eb;color:#374151;}
+.btn-diff.active{background:#2563eb;color:#fff;}
+.btn-generate{background:#4f46e5;color:#fff;}
+.btn-reset{background:#e5e7eb;color:#374151;}
+.btn-answer{background:#16a34a;color:#fff;}
+.btn-print{background:#111827;color:#fff;}
+input[type=number]{padding:8px;width:80px;border:1px solid #d1d5db;border-radius:6px;text-align:center;font-weight:700;}
+
+/* ===== WORKSHEET ===== */
+.worksheet{width:210mm;height:297mm;padding:15mm;margin:0 auto 18px;background:#fff;box-shadow:0 4px 10px rgba(0,0,0,.06);page-break-after:always;overflow:hidden;}
+.ws-header{text-align:center;margin-bottom:10px;}
+.ws-title{font-size:26px;font-weight:900;padding-bottom:6px;border-bottom:3px solid #e5e7eb;display:inline-block;}
+.day-num{font-size:40px;color:#f59e0b;margin-right:8px;font-family:serif;}
+.ws-info{display:flex;justify-content:space-between;margin:12px 0;}
+.info-field{width:48px;height:32px;border:1px solid #cbd5e1;border-radius:6px;font-weight:700;text-align:center;}
+
+.ws-content{border-top:2px solid #000;border-bottom:2px solid #000;height:calc(100% - 150px);}
+.columns{display:grid;grid-template-columns:1fr 1fr;height:100%;}
+.left-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(5,1fr);border-right:2px solid #000;}
+.problem-cell{display:flex;justify-content:center;align-items:center;padding:12px;border:1px solid #e5e7eb;}
+.vertical-problem{text-align:right;font-size:28px;font-family:monospace;font-weight:800;width:100%;}
+.vertical-problem .line{border-top:2px solid #000;margin-top:6px;}
+
+.right-list{display:grid;grid-template-rows:repeat(10,1fr);padding-left:12px;}
+.horizontal-problem{display:flex;align-items:center;border-bottom:1px solid #ddd;font-size:20px;font-family:monospace;font-weight:700;padding-left:8px;}
+.answer-box{width:110px;height:38px;border:2px solid #d1d5db;border-radius:6px;margin-left:12px;}
+
+/* ===== ANSWER SHEET ===== */
+.answer-sheet{width:210mm;height:297mm;padding:15mm;margin:0 auto 18px;background:#fff;page-break-after:always;}
+.answer-title{text-align:center;font-size:26px;font-weight:900;margin-bottom:14px;color:#16a34a;}
+.answer-group{margin-bottom:12px;padding:12px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;}
+.answer-label{font-weight:900;margin-bottom:6px;color:#166534;}
+.answers{font-family:monospace;font-size:18px;line-height:1.8;white-space:pre-wrap;}
+
+/* PRINT */
+@media print{
+ body{padding:0;background:#fff;}
+ .control{display:none!important;}
+ .worksheet,.answer-sheet{box-shadow:none;margin:0;}
+}
 </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Control -->
-    <div class="control">
-      <div class="control-row">
-        <div class="controls-left">
-          <strong style="font-size:16px;">🧮 아빠표 연산 학습지 만들기</strong>
-          <div style="display:flex; gap:8px; margin-left:12px;">
-            <button class="btn btn-diff" id="btn-one">1자리</button>
-            <button class="btn btn-diff active" id="btn-two">2자리</button>
-            <button class="btn btn-diff" id="btn-three">3자리</button>
-          </div>
-        </div>
-        <div class="controls-right">
-          <label style="font-weight:700; margin-right:6px;">생성 일수</label>
-          <input id="numDays" type="number" min="1" max="30" value="1" />
-          <button class="btn btn-generate" id="genBtn">✨ 문제 생성</button>
-          <button class="btn btn-reset" id="resetBtn">↻ 초기화</button>
-          <button class="btn btn-answer" id="answerBtn" disabled>📋 답안지 출력</button>
-          <button class="btn btn-print" id="pdfBtn" disabled>📥 PDF 다운로드</button>
-          <button class="btn btn-print" id="imgBtn" disabled>🖼️ 이미지 저장</button>
-        </div>
-      </div>
-    </div>
-    <!-- Print area -->
-    <div id="printArea"></div>
-    <div id="message" class="message">문제를 생성하면 여기에 미리보기가 나타납니다.</div>
-  </div>
+<div class="container">
+ <div class="control">
+   <div class="control-row">
+     <div>
+       <strong>🧮 아빠표 연산 학습지 만들기</strong>
+       <button class="btn btn-diff" id="btn-one">1자리</button>
+       <button class="btn btn-diff active" id="btn-two">2자리</button>
+       <button class="btn btn-diff" id="btn-three">3자리</button>
+     </div>
+     <div>
+       <label>생성 일수</label>
+       <input id="numDays" type="number" min="1" max="30" value="1" />
+       <button class="btn btn-generate" id="genBtn">✨ 문제 생성</button>
+       <button class="btn btn-reset" id="resetBtn">↻ 초기화</button>
+       <button class="btn btn-answer" id="answerBtn" disabled>📋 답안지</button>
+       <button class="btn btn-print" id="pdfBtn" disabled>📥 PDF</button>
+       <button class="btn btn-print" id="imgBtn" disabled>🖼 이미지</button>
+     </div>
+   </div>
+ </div>
+
+ <div id="printArea"></div>
+ <div id="message" class="message">문제를 생성하면 여기에 나타납니다.</div>
+</div>
+
 <script>
+/* =========================
+   CORE SCRIPT
+========================= */
 (function(){
-  // State
-  let difficulty = 'two';
-  let worksheets = [];
-  let showAnswer = false;
-  // Ranges
-  const ranges = {
-    one: { min:1, max:9 },
-    two: { min:10, max:99 },
-    three: { min:100, max:999 }
-  };
-  // Utilities
-  function randomIn(range){
-    return Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
-  }
-  // DOM
-  const btnOne = document.getElementById('btn-one');
-  const btnTwo = document.getElementById('btn-two');
-  const btnThree = document.getElementById('btn-three');
-  const genBtn = document.getElementById('genBtn');
-  const resetBtn = document.getElementById('resetBtn');
-  const answerBtn = document.getElementById('answerBtn');
-  const pdfBtn = document.getElementById('pdfBtn');
-  const imgBtn = document.getElementById('imgBtn');
-  const numDaysInput = document.getElementById('numDays');
-  const printArea = document.getElementById('printArea');
-  const message = document.getElementById('message');
-  // Set difficulty UI
-  function setDifficulty(level, el){
-    difficulty = level;
-    [btnOne, btnTwo, btnThree].forEach(b => b.classList.remove('active'));
-    if(el) el.classList.add('active');
-  }
-  btnOne.addEventListener('click', ()=> setDifficulty('one', btnOne));
-  btnTwo.addEventListener('click', ()=> setDifficulty('two', btnTwo));
-  btnThree.addEventListener('click', ()=> setDifficulty('three', btnThree));
-  // Generate
-  function generateProblems(){
-    const range = ranges[difficulty];
-    const days = Math.max(1, Math.min(30, parseInt(numDaysInput.value, 10) || 1));
-    worksheets = [];
-    for(let day=1; day<=days; day++){
-      const add = [];
-      const sub = [];
-      while(add.length < 20){
-        const a = randomIn(range);
-        const b = randomIn(range);
-        if(a % 10 === b % 10) continue; // avoid same unit digit
-        add.push({a,b});
-      }
-      while(sub.length < 20){
-        let a = randomIn(range);
-        let b = randomIn(range);
-        if(a % 10 === b % 10) continue;
-        if(a < b) [a,b] = [b,a];
-        sub.push({a,b});
-      }
-      worksheets.push({ day, add, sub });
-    }
-    showAnswer = false;
-    render();
-    answerBtn.disabled = false;
-    pdfBtn.disabled = false;
-    imgBtn.disabled = false;
-  }
-  function resetAll(){
-    worksheets = [];
-    showAnswer = false;
-    printArea.innerHTML = '';
-    message.style.display = 'block';
-    answerBtn.disabled = true;
-    pdfBtn.disabled = true;
-    imgBtn.disabled = true;
-  }
-  function toggleAnswer(){
-    showAnswer = !showAnswer;
-    render();
-  }
-  genBtn.addEventListener('click', generateProblems);
-  resetBtn.addEventListener('click', resetAll);
-  answerBtn.addEventListener('click', toggleAnswer);
-  // PDF 다운로드
-  pdfBtn.addEventListener('click', () => {
-    document.querySelector('.control').style.display = 'none';
-    message.style.display = 'none';
-    const opt = {
-      margin: 0,
-      filename: 'math_worksheet.pdf',
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
-      pagebreak: { mode: ['css', 'legacy'] }
-    };
-    setTimeout(() => {
-      html3pdf().set(opt).from(printArea).save().then(() => {
-        document.querySelector('.control').style.display = 'block';
-        if (!worksheets.length) message.style.display = 'block';
-      });
-    }, 500);
-  });
-  // 이미지 저장 (ZIP 압축 버전)
-  imgBtn.addEventListener('click', async () => {
-    const sheets = Array.from(printArea.querySelectorAll('.worksheet, .answer-sheet'));
-    if (sheets.length === 0) return;
+ let difficulty='two';
+ let worksheets=[];
+ let showAnswer=false;
+ const ranges={one:{min:1,max:9},two:{min:10,max:99},three:{min:100,max:999}};
+ const rand=r=>Math.floor(Math.random()*(r.max-r.min+1))+r.min;
 
-    const zip = new JSZip(); // ZIP 생성
-    const promises = sheets.map(async (sheet, index) => {
-      const canvas = await html2canvas(sheet, { scale: 2, useCORS: true });
-      const imgData = canvas.toDataURL('image/png');
-      console.log(`Processing page ${index + 1}`); // 디버그
-      zip.file(`worksheet_page_${index + 1}.png`, imgData.split(',')[1], {base64: true}); // ZIP에 추가
-      return imgData; // 개별 다운로드용 (ZIP 대안)
-    });
+ const btnOne=document.getElementById('btn-one');
+ const btnTwo=document.getElementById('btn-two');
+ const btnThree=document.getElementById('btn-three');
+ const genBtn=document.getElementById('genBtn');
+ const resetBtn=document.getElementById('resetBtn');
+ const answerBtn=document.getElementById('answerBtn');
+ const pdfBtn=document.getElementById('pdfBtn');
+ const imgBtn=document.getElementById('imgBtn');
+ const numDays=document.getElementById('numDays');
+ const printArea=document.getElementById('printArea');
+ const msg=document.getElementById('message');
 
-    try {
-      const dataURLs = await Promise.all(promises);
-      console.log('All images processed:', dataURLs.length); // 디버그
+ function setDiff(d,el){difficulty=d;[btnOne,btnTwo,btnThree].forEach(b=>b.classList.remove('active'));el.classList.add('active');}
+ btnOne.onclick=()=>setDiff('one',btnOne);
+ btnTwo.onclick=()=>setDiff('two',btnTwo);
+ btnThree.onclick=()=>setDiff('three',btnThree);
 
-      // ZIP 다운로드 (권장: 한 파일로 전체)
-      zip.generateAsync({type: 'blob'}).then(blob => {
-        saveAs(blob, 'worksheets.zip');
-      });
-    } catch (err) {
-      console.error('Image save error:', err);
-    }
-  });
-  // Render helpers
-  function createWorksheetHTML(day, problems, op, title){
-    const left = problems.slice(0,10);
-    const right = problems.slice(10,20);
-    let html = '';
-    html += `<div class="worksheet">`;
-    html += `<div class="ws-header"><div class="ws-title"><span class="day-num">${day}</span>일차 - ${title}</div></div>`;
-    html += `<div class="ws-info"><div class="info-group">📅<input class="info-field" placeholder="월"><input class="info-field" placeholder="일"></div><div class="info-group">🕐<input class="info-field" placeholder="분"><input class="info-field" placeholder="초"></div></div>`;
-    html += `<div class="ws-content"><div class="columns">`;
-    // left grid
-    html += `<div class="left-grid">`;
-    left.forEach(p=>{
-      html += `<div class="problem-cell"><div class="vertical-problem"><div class="num1">${p.a}</div><div class="op-row"><div class="op">${op}</div><div class="num2">${p.b}</div></div><div class="line"></div><div class="answer-space"></div></div></div>`;
-    });
-    // fill blanks if needed
-    for(let k=left.length;k<10;k++){
-      html += `<div class="problem-cell"><div style="width:100%;height:100%;"></div></div>`;
-    }
-    html += `</div>`;
-    // right list
-    html += `<div class="right-list">`;
-    right.forEach(p=>{
-      html += `<div class="horizontal-problem"><span>${p.a}</span><span>${op}</span><span>${p.b}</span><span>=</span><div class="answer-box"></div></div>`;
-    });
-    for(let k=right.length;k<10;k++){
-      html += `<div class="horizontal-problem"></div>`;
-    }
-    html += `</div>`;
-    html += `</div></div>`;
-    html += `<div class="ws-footer">eddie math</div>`;
-    html += `</div>`;
-    return html;
-  }
-  function createAnswerHTML(){
-    let html = `<div class="answer-sheet"><h2>📋 연산 답안지</h2><div class="answer-content">`;
-    worksheets.forEach(ws=>{
-      const addAnswers = ws.add.map((p,i)=>`${i+1}) ${p.a + p.b}`).join(' ');
-      const subAnswers = ws.sub.map((p,i)=>`${i+1}) ${p.a - p.b}`).join(' ');
-      html += `<div class="answer-day"><div>${ws.day}일차 덧셈: ${addAnswers}</div><div>${ws.day}일차 뺄셈: ${subAnswers}</div></div>`;
-    });
-    html += `</div><div style="text-align:center;margin-top:12px;font-weight:700;color:#9ca3af;">eddie math - 답안지</div></div>`;
-    return html;
-  }
-  function render(){
-    if(!worksheets || worksheets.length === 0){
-      printArea.innerHTML = '';
-      message.style.display = 'block';
-      return;
-    }
-    message.style.display = 'none';
-    if(showAnswer){
-      printArea.innerHTML = createAnswerHTML();
-    } else {
-      let out = '';
-      worksheets.forEach(ws=>{
-        out += createWorksheetHTML(ws.day, ws.add, '+', '덧셈');
-        out += createWorksheetHTML(ws.day, ws.sub, '−', '뺄셈');
-      });
-      printArea.innerHTML = out;
-    }
-  }
-  // Expose for debug (optional)
-  window._debug_getWorksheets = ()=>worksheets;
-})();
-</script>
-</body>
-</html>
+ function generate(){
+   const r=ranges[difficulty];
+   const days=Math.max(1,Math.min(30,parseInt(numDays.value)||1));
+   worksheets=[];
+   for(let d=1;d<=days;d++){
+     const add=[];const sub=[];
+     while(add.length<20){let a=rand(r),b=rand(r);if(a%10===b%10)continue;add.push({a,b});}
+     while(sub.length<20){let a=rand(r),b=rand(r);if(a%10===b%10)continue;if(a<b)[a,b]=[b,a];sub.push({a,b});}
+     worksheets.push({day:d,add,sub});
+   }
+   showAnswer=false;render();
+   answerBtn.disabled=false;pdfBtn.disabled=false;imgBtn.disabled=false;
+ }
+
+ function reset(){worksheets=[];showAnswer=false;printArea.innerHTML='';msg.style.display='block';answerBtn.disabled=true;pdfBtn.disabled=true;imgBtn.disabled=true;}
+ genBtn.onclick=generate;
+ resetBtn.onclick=reset;
+ answerBtn.onclick=()=>{showAnswer=!showAnswer;render();};
+
+ /* WORKSHEET HTML */
+ function WS(day,probs,op,title){
+   const left=probs.slice(0,10),right=probs.slice(10,20);
+   let h="";
+   h+=`<div class='worksheet'>`;
+   h+=`<div class='ws-header'><div class='ws-title'><span class='day-num'>${day}</span>일차 - ${title}</div></div>`;
+   h+=`<div class='ws-info'><div>📅 <input class='info-field' placeholder='월'><input class='info-field' placeholder='일'></div><div>🕒 <input class='info-field' placeholder='분'><input class='info-field' placeholder='초'></div></div>`;
+
+   h+=`<div class='ws-content'><div class='columns'>`;
+
+   h+=`<div class='left-grid'>`;
+   left.forEach(p=>{
+     h+=`<div class='problem-cell'><div class='vertical-problem'>${p.a}<br><span style='float:left;font-weight:900'>${op}</span> ${p.b}<div class='line'></div></div></div>`;
+   });
+   for(let i=left.length;i<10;i++)h+=`<div class='problem-cell'></div>`;
+   h+=`</div>`;
+
+   h+=`<div class='right-list'>`;
+   right.forEach(p=>{
+     h+=`<div class='horizontal-problem'>${p.a} ${op} ${p.b} = <div class='answer-box'></div></div>`;
+   });
+   for(let i=right.length;i<10;i++)h+=`<div class='horizontal-problem'></div>`;
+   h+=`</div>`;
+
+   h+=`</div></div>`;
+   h+=`<div class='ws-footer' style='text-align:center;color:#999;margin-top:6px;'>eddie math</div>`;
+   h+=`</div>`;
+   return h;
+ }
+
+ /* ANSWER SHEET */
+ function ANSWERS(){
+   let h=`<div class='answer-sheet'>`;
+   h+=`<div class='answer-title'>📋 연산 답안지</div>`;
+   worksheets.forEach(w=>{
+     h+=`<div class='answer-group'>`;
+     h+=`<div class='answer-label'>🟦 ${w.day}일차 덧셈</div>`;
+     h+=`<div class='answers'>${w.add.map((p,i)=>`${i+1}) ${p.a+p.b}${(i+1)%10===0?'
+':''}`).join(' ')}</div>`;
+     h+=`<div class='answer-label' style='margin-top:10px;'>🟧 ${w.day}일차 뺄셈</div>`;
+     h+=`<div class='answers'>${w.sub.map((p,i)=>`${i+1}) ${p.a-p.b}${(i+1)%10===0?'
+':''}`).join(' ')}</div>`;
+     h+=`</div>`;
+   });
+   h+=`<div style='text-align:center;color:#999;margin-top:20px;'>eddie math - 답안지</div>`;
+   h+=`</div>`;
+   return h;
+ }
+
+ /* RENDER */
+ function render(){
+   if(!worksheets.length){printArea.innerHTML='';msg.style.display='block';return;}
+   msg.style.display='none';
+   if(showAnswer){printArea.innerHTML=ANSWERS();setTimeout(enableLongPressSaving,400);return;}
+   let out="";
+   worksheets.forEach(w=>{
+     out+=WS(w.day,w.add,'+','덧셈');
+     out+=WS(w.day,w.sub,'−','뺄셈');
+   });
+   printArea.innerHTML=out;
+   setTimeout(enableLongPressSaving,400);
+ }
+
+ /* IMAGE SAVE */
+ imgBtn.onclick=async()=>{
+   const sheets=[...printArea.querySelectorAll('.worksheet,.answer-sheet')];
+   const zip=new JSZip();
+   for(const[s,i] of sheets.entries()){
+     const c=await html2canvas(i,{scale:2});
+     const d=c.toDataURL('image/png');
+     zip.file(`worksheet_${s+1}.png`,d.split(',')[1],{base64:true});
+   }
+   const blob=await zip.generateAsync({type:'blob'});saveAs(blob,'worksheets.zip');
+ };
+
+ /* PDF */
+ pdfBtn.onclick=()=>{
+   document.querySelector('.control').style.display='none';
+   html3pdf().set({margin:0,filename:'math.pdf',image:{type:'jpeg',quality:.98},html2canvas:{scale:2},jsPDF:{unit:'mm',format:'a4'}}).from(printArea).save().then(()=>{document.querySelector('.control').style.display='block';});
+ };
+
+/* ===============================
+   LONG PRESS TO SAVE (MOBILE)
+=============================== */
+let pressTimer=null;
+function startLongPress(t){pressTimer=setTimeout(async()=>{const c=await html2canvas(t,{scale:2});const d=c.toDataURL('image/png');const b=await (await fetch(d)).blob();saveAs(b,'worksheet_page.png');},600);}  
+function cancelLongPress(){clearTimeout(pressTimer);pressTimer=null;}
+function enableLong

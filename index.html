@@ -88,7 +88,6 @@
   @media (max-width:760px) {
     body { padding:12px; }
     .container { padding:0 8px; }
-    #pcPrintBtn { display: none; } /* 모바일에서 PC 인쇄 버튼 숨김 */
   }
 </style>
 </head>
@@ -111,7 +110,6 @@
           <button class="btn btn-generate" id="genBtn">✨ 문제 생성</button>
           <button class="btn btn-reset" id="resetBtn">↻ 초기화</button>
           <button class="btn btn-answer" id="answerBtn" disabled>📋 답안지 출력</button>
-          <button class="btn btn-print" id="pcPrintBtn" disabled>🖨️ PC 인쇄</button> <!-- 이름 변경 -->
           <button class="btn btn-print" id="pdfBtn" disabled>📥 PDF 다운로드</button>
           <button class="btn btn-print" id="imgBtn" disabled>🖼️ 이미지 저장</button>
         </div>
@@ -144,13 +142,11 @@
   const genBtn = document.getElementById('genBtn');
   const resetBtn = document.getElementById('resetBtn');
   const answerBtn = document.getElementById('answerBtn');
-  const pcPrintBtn = document.getElementById('pcPrintBtn');
   const pdfBtn = document.getElementById('pdfBtn');
   const imgBtn = document.getElementById('imgBtn');
   const numDaysInput = document.getElementById('numDays');
   const printArea = document.getElementById('printArea');
   const message = document.getElementById('message');
-  const control = document.querySelector('.control');
   // Set difficulty UI
   function setDifficulty(level, el){
     difficulty = level;
@@ -186,7 +182,6 @@
     showAnswer = false;
     render();
     answerBtn.disabled = false;
-    pcPrintBtn.disabled = false;
     pdfBtn.disabled = false;
     imgBtn.disabled = false;
   }
@@ -196,7 +191,6 @@
     printArea.innerHTML = '';
     message.style.display = 'block';
     answerBtn.disabled = true;
-    pcPrintBtn.disabled = true;
     pdfBtn.disabled = true;
     imgBtn.disabled = true;
   }
@@ -207,20 +201,9 @@
   genBtn.addEventListener('click', generateProblems);
   resetBtn.addEventListener('click', resetAll);
   answerBtn.addEventListener('click', toggleAnswer);
-  // PC 인쇄 (원래 기능 유지)
-  pcPrintBtn.addEventListener('click', () => {
-    control.style.display = 'none';
-    message.style.display = 'none';
-    void printArea.offsetHeight; // reflow
-    setTimeout(() => {
-      window.print();
-      control.style.display = 'block';
-      if (!worksheets.length) message.style.display = 'block';
-    }, 100);
-  });
   // PDF 다운로드
   pdfBtn.addEventListener('click', () => {
-    control.style.display = 'none';
+    document.querySelector('.control').style.display = 'none';
     message.style.display = 'none';
     const opt = {
       margin: 0,
@@ -232,26 +215,25 @@
     };
     setTimeout(() => {
       html3pdf().set(opt).from(printArea).save().then(() => {
-        control.style.display = 'block';
+        document.querySelector('.control').style.display = 'block';
         if (!worksheets.length) message.style.display = 'block';
       });
     }, 500);
   });
-  // 이미지 저장 (전체 페이지 처리)
+  // 이미지 저장 (Promise.all로 버그 수정)
   imgBtn.addEventListener('click', () => {
     const sheets = Array.from(printArea.querySelectorAll('.worksheet, .answer-sheet'));
-    if (sheets.length === 0) return;
-    sheets.forEach((sheet, index) => {
-      html2canvas(sheet, { scale: 2, useCORS: true }).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
+    const promises = sheets.map(sheet => html2canvas(sheet, { scale: 2, useCORS: true }).then(canvas => canvas.toDataURL('image/png')));
+    Promise.all(promises).then(dataURLs => {
+      dataURLs.forEach((imgData, index) => {
         const a = document.createElement('a');
         a.href = imgData;
         a.download = `worksheet_page_${index + 1}.png`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-      }).catch(err => console.error('Image save error:', err));
-    });
+      });
+    }).catch(err => console.error('Image save error:', err));
   });
   // Render helpers
   function createWorksheetHTML(day, problems, op, title){

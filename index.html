@@ -1,3 +1,120 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>아빠표 연산 학습지 (A4 인쇄 최적화)</title>
+<style>
+  /* Reset */
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, Helvetica, sans-serif; background:#f3f4f6; padding:28px; }
+  /* Container */
+  .container { max-width:980px; margin:0 auto; }
+  /* Control panel (hidden when printing) */
+  .control { background:#fff; border-radius:12px; padding:16px; box-shadow:0 6px 18px rgba(0,0,0,.06); margin-bottom:20px; }
+  .control-row { display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+  .controls-left { display:flex; gap:10px; align-items:center; }
+  .controls-right { display:flex; gap:8px; align-items:center; }
+  .btn { border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; }
+  .btn-diff { background:#f3f4f6; color:#374151; }
+  .btn-diff.active { background:#2563eb; color:#fff; box-shadow:0 4px 10px rgba(37,99,235,.14); }
+  .btn-generate { background:#4f46e5; color:#fff; }
+  .btn-reset { background:#e5e7eb; color:#374151; }
+  .btn-answer { background:#16a34a; color:#fff; }
+  .btn-print { background:#111827; color:#fff; }
+  input[type=number] { padding:8px; width:80px; border-radius:6px; border:1px solid #d1d5db; text-align:center; font-weight:700; }
+  /* Print-area basic message */
+  .message { text-align:center; color:#9ca3af; padding:56px 0; }
+  /* Worksheet (A4) */
+  .worksheet {
+    width:210mm; /* A4 width */
+    min-height:297mm; /* allow flexible height but not shrink too much */
+    padding:15mm; /* inner margin for printable area */
+    margin: 0 auto 18px;
+    background:#fff;
+    box-shadow:0 4px 10px rgba(0,0,0,.06);
+    page-break-after: always; /* ensure each worksheet is its own printed page */
+    overflow:visible;
+    box-sizing:border-box;
+    display:block;
+  }
+  /* Header */
+  .ws-header { text-align:center; margin-bottom:8px; }
+  .ws-title { font-size:28px; font-weight:900; display:inline-block; padding-bottom:8px; border-bottom:4px solid #e5e7eb; }
+  .day-num { font-size:40px; color:#f59e0b; margin-right:8px; font-family:serif; }
+  .ws-info { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; margin-top:12px; margin-bottom:8px; }
+  .info-group { display:flex; gap:8px; align-items:center; }
+  .info-field { width:48px; height:32px; border:1px solid #cbd5e1; border-radius:6px; text-align:center; font-weight:700; }
+  /* Content block: use grid for stable heights */
+  .ws-content { display:block; border-top:2px solid #000; border-bottom:2px solid #000; margin-top:8px; height: calc(100% - 132px); }
+  /* height calc assumes header + footer ~132px; ensures left-grid and right-list share available vertical space */
+  .columns { display:grid; grid-template-columns: 1fr 1fr; height:100%; }
+  /* Left: 2x5 grid */
+  .left-grid { display:grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(5, 1fr); gap:0; border-right:2px solid #000; height:100%; }
+  .problem-cell { padding:12px; display:flex; align-items:center; justify-content:center; border-right:1px solid #e5e7eb; border-bottom:1px solid #e5e7eb; }
+  .problem-cell:nth-child(2n) { border-right:none; }
+  .problem-cell:nth-child(n+9) { border-bottom:none; }
+  .vertical-problem { width:100%; display:flex; flex-direction:column; align-items:flex-end; font-family:monospace; font-size:28px; font-weight:800; }
+  .vertical-problem .num1 { margin-bottom:6px; }
+  .vertical-problem .op-row { width:100%; display:flex; justify-content:flex-end; align-items:center; gap:8px; }
+  .vertical-problem .op { margin-right:auto; padding-right:8px; } /* operator placed left inside row */
+  .vertical-problem .line { width:100%; border-top:2px solid #000; margin-top:8px; }
+  .vertical-problem .answer-space { height:44px; }
+  /* Right: 10 horizontal lines */
+  .right-list { display:grid; grid-template-rows: repeat(10, 1fr); height:100%; padding-left:12px; }
+  .horizontal-problem { display:flex; align-items:center; padding-left:8px; font-family:monospace; font-size:18px; font-weight:700; border-bottom:1px solid #e5e7eb; }
+  .horizontal-problem:last-child { border-bottom:none; }
+  .horizontal-problem span { margin-right:8px; }
+  .answer-box { width:96px; height:36px; border:2px solid #d1d5db; border-radius:6px; margin-left:12px; }
+  .ws-footer { text-align:center; margin-top:8px; color:#9ca3af; font-weight:700; }
+  /* Answer sheet */
+  .answer-sheet { width:210mm; min-height:297mm; padding:15mm; margin:0 auto 18px; background:#fff; box-shadow:0 4px 10px rgba(0,0,0,.06); page-break-after:always; }
+  .answer-sheet h2 { text-align:center; margin-bottom:12px; }
+  .answer-day { margin-bottom:8px; font-weight:700; color:#374151; }
+  /* Print overrides */
+  @media print {
+    body { background:white; padding:0; }
+    .control { display:none !important; }
+    .container { padding:0; }
+    .worksheet, .answer-sheet { box-shadow:none; margin:0; }
+    @page { size: A4; margin: 0; } /* Use printer margins or 0 depending on printer support */
+  }
+  /* small screen convenience */
+  @media (max-width:760px) {
+    body { padding:12px; }
+    .container { padding:0 8px; }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <!-- Control -->
+    <div class="control">
+      <div class="control-row">
+        <div class="controls-left">
+          <strong style="font-size:16px;">🧮 아빠표 연산 학습지 만들기</strong>
+          <div style="display:flex; gap:8px; margin-left:12px;">
+            <button class="btn btn-diff" id="btn-one">1자리</button>
+            <button class="btn btn-diff active" id="btn-two">2자리</button>
+            <button class="btn btn-diff" id="btn-three">3자리</button>
+          </div>
+        </div>
+        <div class="controls-right">
+          <label style="font-weight:700; margin-right:6px;">생성 일수</label>
+          <input id="numDays" type="number" min="1" max="30" value="1" />
+          <button class="btn btn-generate" id="genBtn">✨ 문제 생성</button>
+          <button class="btn btn-reset" id="resetBtn">↻ 초기화</button>
+          <button class="btn btn-answer" id="answerBtn" disabled>📋 답안지 출력</button>
+          <button class="btn btn-print" id="printBtn" disabled>🖨️ 인쇄</button>
+        </div>
+      </div>
+    </div>
+    <!-- Print area -->
+    <div id="printArea"></div>
+    <div id="message" class="message">문제를 생성하면 여기에 미리보기가 나타납니다.</div>
+  </div>
+<script>
 (function(){
   // State
   let difficulty = 'two';
@@ -73,16 +190,17 @@
     showAnswer = !showAnswer;
     render();
   }
-  // 수정된 print 이벤트: 강제 리플로우 + 지연 호출
+  genBtn.addEventListener('click', generateProblems);
+  resetBtn.addEventListener('click', resetAll);
+  answerBtn.addEventListener('click', toggleAnswer);
+  // 수정: print 이벤트에 reflow + 지연 추가
   printBtn.addEventListener('click', () => {
-    // 강제 DOM 리플로우: 레이아웃 메트릭스 읽기 (Safari가 DOM 재계산하게 함)
-    void printArea.offsetHeight; // 또는 printArea.getBoundingClientRect();
-    console.log('Reflow forced'); // 디버깅용, 나중에 제거
-
-    // 지연으로 print 호출: iOS에서 렌더링 기다림 (0ms도 효과 있지만, 100ms로 안전하게)
+    // 강제 DOM reflow
+    void printArea.offsetHeight;
+    // 지연 print 호출
     setTimeout(() => {
       window.print();
-    }, 100); // 0~500ms 사이 테스트 해보세요. 너무 길면 UX 나빠짐.
+    }, 100); // 100ms; 필요 시 0~200ms 조정
   });
   // Render helpers
   function createWorksheetHTML(day, problems, op, title){
@@ -136,20 +254,20 @@
     message.style.display = 'none';
     if(showAnswer){
       printArea.innerHTML = createAnswerHTML();
-      return;
+    } else {
+      let out = '';
+      worksheets.forEach(ws=>{
+        out += createWorksheetHTML(ws.day, ws.add, '+', '덧셈');
+        out += createWorksheetHTML(ws.day, ws.sub, '−', '뺄셈');
+      });
+      printArea.innerHTML = out;
     }
-    // Build pages: for each day, create addition page then subtraction page
-    let out = '';
-    worksheets.forEach(ws=>{
-      out += createWorksheetHTML(ws.day, ws.add, '+', '덧셈');
-      out += createWorksheetHTML(ws.day, ws.sub, '−', '뺄셈');
-    });
-    printArea.innerHTML = out;
-
-    // 추가: render 후 즉시 리플로우 강제 (DOM 안정화)
+    // 추가: render 후 reflow
     void printArea.offsetHeight;
-    console.log('Render reflow forced'); // 디버깅용
   }
   // Expose for debug (optional)
   window._debug_getWorksheets = ()=>worksheets;
 })();
+</script>
+</body>
+</html>

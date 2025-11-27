@@ -8,6 +8,8 @@
 <script src="https://unpkg.com/html3pdf@latest/dist/html3pdf.bundle.min.js"></script>
 <!-- html2canvas CDN (이미지 저장용) -->
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<!-- jsZip CDN (ZIP 압축용) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   /* Reset */
   * { box-sizing: border-box; margin:0; padding:0; }
@@ -220,20 +222,34 @@
       });
     }, 500);
   });
-  // 이미지 저장 (Promise.all로 버그 수정)
-  imgBtn.addEventListener('click', () => {
+  // 이미지 저장 (ZIP 압축 버전)
+  imgBtn.addEventListener('click', async () => {
     const sheets = Array.from(printArea.querySelectorAll('.worksheet, .answer-sheet'));
-    const promises = sheets.map(sheet => html2canvas(sheet, { scale: 2, useCORS: true }).then(canvas => canvas.toDataURL('image/png')));
-    Promise.all(promises).then(dataURLs => {
-      dataURLs.forEach((imgData, index) => {
+    if (sheets.length === 0) return;
+
+    const zip = new JSZip(); // ZIP 생성
+    const promises = sheets.map(async (sheet, index) => {
+      const canvas = await html2canvas(sheet, { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL('image/png');
+      console.log(`Processing page ${index + 1}`); // 디버그
+      zip.file(`worksheet_page_${index + 1}.png`, imgData.split(',')[1], {base64: true}); // ZIP에 추가
+      return imgData; // 개별 다운로드용 (ZIP 대안)
+    });
+
+    try {
+      const dataURLs = await Promise.all(promises);
+      console.log('All images processed:', dataURLs.length); // 디버그
+
+      // ZIP 다운로드 (권장: 한 파일로 전체)
+      zip.generateAsync({type: 'blob'}).then(blob => {
         const a = document.createElement('a');
-        a.href = imgData;
-        a.download = `worksheet_page_${index + 1}.png`;
-        document.body.appendChild(a);
+        a.href = URL.createObjectURL(blob);
+        a.download = 'worksheets.zip';
         a.click();
-        document.body.removeChild(a);
       });
-    }).catch(err => console.error('Image save error:', err));
+    } catch (err) {
+      console.error('Image save error:', err);
+    }
   });
   // Render helpers
   function createWorksheetHTML(day, problems, op, title){

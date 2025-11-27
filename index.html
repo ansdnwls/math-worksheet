@@ -193,14 +193,39 @@
   genBtn.addEventListener('click', generateProblems);
   resetBtn.addEventListener('click', resetAll);
   answerBtn.addEventListener('click', toggleAnswer);
-  // 수정: print 이벤트에 reflow + 지연 추가
+  // 수정: 새 윈도우로 print 워크어라운드
   printBtn.addEventListener('click', () => {
-    // 강제 DOM reflow
-    void printArea.offsetHeight;
-    // 지연 print 호출
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    const content = printArea.innerHTML; // 동적 콘텐츠
+    const styles = document.querySelector('style').outerHTML; // 스타일 복사
+    printWindow.document.write(`
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Print</title>
+        ${styles}
+        <style>
+          body { background:white; padding:0; }
+          .control, #message { display:none !important; } /* 제어판 숨김 */
+          .container { padding:0; max-width:none; }
+          .worksheet, .answer-sheet { box-shadow:none; margin:0 auto; page-break-after:always; }
+          @page { size: A4; margin:0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          ${content}
+        </div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    // 로드 후 print 호출 (iOS에서 지연 필요)
     setTimeout(() => {
-      window.print();
-    }, 100); // 100ms; 필요 시 0~200ms 조정
+      printWindow.print();
+      // 선택: print 후 창 닫기 (iOS에서 print 대화 후 자동 닫기)
+      // printWindow.close();
+    }, 500); // 500ms; 조정 가능
   });
   // Render helpers
   function createWorksheetHTML(day, problems, op, title){
@@ -262,8 +287,6 @@
       });
       printArea.innerHTML = out;
     }
-    // 추가: render 후 reflow
-    void printArea.offsetHeight;
   }
   // Expose for debug (optional)
   window._debug_getWorksheets = ()=>worksheets;

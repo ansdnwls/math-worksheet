@@ -10,6 +10,8 @@
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <!-- jsZip CDN (ZIP 압축용) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<!-- FileSaver.js CDN (iOS 다운로드 호환) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <style>
   /* Reset */
   * { box-sizing: border-box; margin:0; padding:0; }
@@ -242,10 +244,7 @@
 
       // ZIP 다운로드 (권장: 한 파일로 전체)
       zip.generateAsync({type: 'blob'}).then(blob => {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'worksheets.zip';
-        a.click();
+        saveAs(blob, 'worksheets.zip');
       });
     } catch (err) {
       console.error('Image save error:', err);

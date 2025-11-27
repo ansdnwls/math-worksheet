@@ -4,8 +4,10 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>아빠표 연산 학습지 (A4 인쇄 최적화)</title>
-<!-- html2pdf.js CDN 추가 -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<!-- html3pdf CDN (포크 버전) -->
+<script src="https://unpkg.com/html3pdf@latest/dist/html3pdf.bundle.min.js"></script>
+<!-- html2canvas CDN (이미지 저장용) -->
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <style>
   /* Reset */
   * { box-sizing: border-box; margin:0; padding:0; }
@@ -24,7 +26,7 @@
   .btn-generate { background:#4f46e5; color:#fff; }
   .btn-reset { background:#e5e7eb; color:#374151; }
   .btn-answer { background:#16a34a; color:#fff; }
-  .btn-print { background:#111827; color:#fff; } /* 버튼 텍스트는 "PDF 다운로드"로 변경 가능 */
+  .btn-print { background:#111827; color:#fff; } 
   input[type=number] { padding:8px; width:80px; border-radius:6px; border:1px solid #d1d5db; text-align:center; font-weight:700; }
   /* Print-area basic message */
   .message { text-align:center; color:#9ca3af; padding:56px 0; }
@@ -108,7 +110,8 @@
           <button class="btn btn-generate" id="genBtn">✨ 문제 생성</button>
           <button class="btn btn-reset" id="resetBtn">↻ 초기화</button>
           <button class="btn btn-answer" id="answerBtn" disabled>📋 답안지 출력</button>
-          <button class="btn btn-print" id="printBtn" disabled>📥 PDF 다운로드</button> <!-- 텍스트 변경 -->
+          <button class="btn btn-print" id="pdfBtn" disabled>📥 PDF 다운로드</button>
+          <button class="btn btn-print" id="imgBtn" disabled>🖼️ 이미지 저장</button> <!-- 새 버튼 -->
         </div>
       </div>
     </div>
@@ -139,7 +142,8 @@
   const genBtn = document.getElementById('genBtn');
   const resetBtn = document.getElementById('resetBtn');
   const answerBtn = document.getElementById('answerBtn');
-  const printBtn = document.getElementById('printBtn');
+  const pdfBtn = document.getElementById('pdfBtn');
+  const imgBtn = document.getElementById('imgBtn');
   const numDaysInput = document.getElementById('numDays');
   const printArea = document.getElementById('printArea');
   const message = document.getElementById('message');
@@ -178,7 +182,8 @@
     showAnswer = false;
     render();
     answerBtn.disabled = false;
-    printBtn.disabled = false;
+    pdfBtn.disabled = false;
+    imgBtn.disabled = false;
   }
   function resetAll(){
     worksheets = [];
@@ -186,7 +191,8 @@
     printArea.innerHTML = '';
     message.style.display = 'block';
     answerBtn.disabled = true;
-    printBtn.disabled = true;
+    pdfBtn.disabled = true;
+    imgBtn.disabled = true;
   }
   function toggleAnswer(){
     showAnswer = !showAnswer;
@@ -195,30 +201,37 @@
   genBtn.addEventListener('click', generateProblems);
   resetBtn.addEventListener('click', resetAll);
   answerBtn.addEventListener('click', toggleAnswer);
-  // 수정: PDF 다운로드로 변경
-  printBtn.addEventListener('click', () => {
-    // 제어판 숨김 (PDF 생성 시)
+  // PDF 다운로드
+  pdfBtn.addEventListener('click', () => {
     document.querySelector('.control').style.display = 'none';
     message.style.display = 'none';
-
-    // PDF 옵션: A4, 페이지 브레이크, 파일명
     const opt = {
       margin: 0,
       filename: 'math_worksheet.pdf',
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 }, // 고해상도
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['avoid-all', 'css'], avoid: ['.worksheet', '.answer-sheet'] } // 각 시트 별 페이지
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
+      pagebreak: { mode: ['css', 'legacy'] }
     };
-
-    // DOM 업데이트 후 PDF 생성 (동적 콘텐츠 보장)
     setTimeout(() => {
-      html2pdf().set(opt).from(printArea).save().then(() => {
-        // PDF 후 제어판 복구
+      html3pdf().set(opt).from(printArea).save().then(() => {
         document.querySelector('.control').style.display = 'block';
         if (!worksheets.length) message.style.display = 'block';
       });
-    }, 100); // 짧은 지연
+    }, 500);
+  });
+  // 이미지 저장
+  imgBtn.addEventListener('click', () => {
+    const sheets = printArea.querySelectorAll('.worksheet, .answer-sheet');
+    sheets.forEach((sheet, index) => {
+      html2canvas(sheet, { scale: 2 }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = imgData;
+        a.download = `worksheet_page_${index + 1}.png`;
+        a.click();
+      });
+    });
   });
   // Render helpers
   function createWorksheetHTML(day, problems, op, title){

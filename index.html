@@ -3,82 +3,122 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>아빠표 연산 학습지 (PDF 지원 안정 버전)</title>
+<title>아빠표 연산 학습지 (A4 인쇄 최적화)</title>
 
-<!-- html2pdf.js CDN -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<!-- html2pdf (모바일 호환 가장 안정 버전) -->
+<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
 
 <style>
-  * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family:Arial, Helvetica, sans-serif; background:#f3f4f6; padding:24px; }
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body { font-family: Arial, Helvetica, sans-serif; background:#f3f4f6; padding:28px; }
 
-  .container { max-width:960px; margin:auto; }
+  .container { max-width:980px; margin:0 auto; }
 
   .control {
-    background:#fff; padding:16px; border-radius:12px;
-    box-shadow:0 6px 18px rgba(0,0,0,.08);
-    margin-bottom:24px;
+    background:#fff; border-radius:12px;
+    padding:16px; box-shadow:0 6px 18px rgba(0,0,0,.06);
+    margin-bottom:20px;
   }
-  .control-row { display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; }
-  .btn { padding:8px 14px; border-radius:8px; font-weight:700; border:0; cursor:pointer; }
-  .btn-diff { background:#e5e7eb; }
-  .btn-diff.active { background:#2563eb; color:#fff; }
-  .btn-main { background:#4f46e5; color:#fff; }
-  .btn-reset { background:#d1d5db; }
+  .control-row { display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+  .controls-left { display:flex; gap:10px; align-items:center; }
+  .controls-right { display:flex; gap:8px; align-items:center; }
+
+  .btn { border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; }
+  .btn-diff { background:#f3f4f6; color:#374151; }
+  .btn-diff.active { background:#2563eb; color:#fff; box-shadow:0 4px 10px rgba(37,99,235,.14); }
+  .btn-generate { background:#4f46e5; color:#fff; }
+  .btn-reset { background:#e5e7eb; color:#374151; }
   .btn-answer { background:#16a34a; color:#fff; }
-  .btn-pdf { background:#111827; color:#fff; }
+  .btn-print { background:#111827; color:#fff; }
 
   input[type=number] {
-    width:70px; padding:6px; text-align:center; font-weight:700;
-    border:1px solid #d1d5db; border-radius:6px;
+    padding:8px; width:80px; border-radius:6px;
+    border:1px solid #d1d5db; text-align:center; font-weight:700;
   }
 
+  .message { text-align:center; color:#9ca3af; padding:56px 0; }
+
   .worksheet {
-    width:210mm; height:297mm;
-    background:#fff; margin:0 auto 22px;
-    padding:15mm; box-shadow:0 4px 10px rgba(0,0,0,.05);
+    width:210mm; min-height:297mm; padding:15mm;
+    margin:0 auto 18px; background:#fff;
+    box-shadow:0 4px 10px rgba(0,0,0,.06);
+    page-break-after:always; display:block;
+  }
+
+  .ws-header { text-align:center; margin-bottom:8px; }
+  .ws-title { font-size:28px; font-weight:900; padding-bottom:8px; border-bottom:4px solid #e5e7eb; display:inline-block; }
+  .day-num { font-size:40px; color:#f59e0b; margin-right:8px; font-family:serif; }
+
+  .ws-info {
+    display:flex; justify-content:space-between;
+    margin-top:12px; margin-bottom:8px; gap:12px;
+  }
+  .info-group { display:flex; gap:8px; align-items:center; }
+  .info-field {
+    width:48px; height:32px;
+    border:1px solid #cbd5e1; border-radius:6px;
+    text-align:center; font-weight:700;
+  }
+
+  .ws-content { border-top:2px solid #000; border-bottom:2px solid #000; margin-top:8px; }
+  .columns { display:grid; grid-template-columns:1fr 1fr; }
+
+  .left-grid {
+    display:grid; grid-template-columns:1fr 1fr;
+    grid-template-rows:repeat(5, 1fr);
+    border-right:2px solid #000;
+  }
+  .problem-cell {
+    padding:12px; display:flex; align-items:center; justify-content:center;
+    border-right:1px solid #e5e7eb; border-bottom:1px solid #e5e7eb;
+  }
+  .problem-cell:nth-child(2n) { border-right:none; }
+  .problem-cell:nth-child(n+9) { border-bottom:none; }
+
+  .vertical-problem {
+    font-family:monospace; font-size:28px; font-weight:800;
+    display:flex; flex-direction:column; align-items:flex-end;
+  }
+  .vertical-problem .num1 { margin-bottom:6px; }
+  .vertical-problem .op-row { display:flex; justify-content:flex-end; gap:8px; width:100%; }
+  .vertical-problem .op { margin-right:auto; padding-right:8px; }
+  .line { width:100%; border-top:2px solid #000; margin-top:8px; }
+  .answer-space { height:44px; }
+
+  .right-list {
+    display:grid; grid-template-rows:repeat(10, 1fr);
+    padding-left:12px;
+  }
+  .horizontal-problem {
+    display:flex; align-items:center; padding-left:8px;
+    font-family:monospace; font-size:18px; font-weight:700;
+    border-bottom:1px solid #e5e7eb;
+  }
+  .horizontal-problem:last-child { border-bottom:none; }
+  .horizontal-problem span { margin-right:8px; }
+  .answer-box {
+    width:96px; height:36px;
+    border:2px solid #d1d5db; border-radius:6px;
+    margin-left:12px;
+  }
+
+  .ws-footer { text-align:center; margin-top:8px; color:#9ca3af; font-weight:700; }
+
+  .answer-sheet {
+    width:210mm; min-height:297mm; padding:15mm;
+    margin:0 auto 18px; background:#fff;
+    box-shadow:0 4px 10px rgba(0,0,0,.06);
     page-break-after:always;
   }
 
-  .ws-title {
-    text-align:center; font-size:30px; font-weight:900;
-    margin-bottom:8px; padding-bottom:6px; border-bottom:3px solid #ddd;
-  }
-  .day-num { color:#f59e0b; font-size:38px; margin-right:8px; font-family:serif; }
-
-  .ws-info { display:flex; justify-content:space-between; margin:12px 0; }
-  .info-field { width:48px; height:32px; border:1px solid #bbb; border-radius:6px; text-align:center; font-weight:700; }
-
-  .ws-content { border-top:2px solid #000; border-bottom:2px solid #000; height:calc(100% - 135px); margin-top:10px; }
-  .columns { display:grid; grid-template-columns:1fr 1fr; height:100%; }
-
-  .left-grid { display:grid; grid-template-rows:repeat(5,1fr); grid-template-columns:1fr 1fr; border-right:2px solid #000; }
-  .problem-cell { border-bottom:1px solid #ddd; border-right:1px solid #ddd; display:flex; justify-content:center; align-items:center; padding:8px; }
-  .problem-cell:nth-child(2n) { border-right:0; }
-  .problem-cell:nth-child(n+9) { border-bottom:0; }
-
-  .vertical-problem { font-family:monospace; font-size:28px; font-weight:800; width:100%; text-align:right; }
-  .vertical-problem .num1 { margin-bottom:4px; }
-  .vertical-problem .line { border-top:2px solid #000; margin-top:6px; }
-  .answer-space { height:40px; }
-
-  .right-list { display:grid; grid-template-rows:repeat(10,1fr); padding-left:10px; }
-  .horizontal-problem { font-family:monospace; font-size:20px; font-weight:700; border-bottom:1px solid #ddd; display:flex; align-items:center; }
-  .answer-box { width:90px; height:32px; border:2px solid #ccc; margin-left:8px; border-radius:6px; }
-
-  .ws-footer { text-align:center; color:#999; margin-top:8px; }
-
-  .answer-sheet { width:210mm; height:297mm; background:#fff; padding:15mm; margin:auto; margin-bottom:20px; box-shadow:0 4px 10px rgba(0,0,0,.05); page-break-after:always; }
-  .answer-title { text-align:center; margin-bottom:18px; font-size:26px; font-weight:900; }
-
-  .answer-block { margin-bottom:20px; padding-bottom:8px; border-bottom:1px solid #ddd; }
-  .answer-label { font-weight:900; margin-bottom:6px; font-size:18px; }
-  .answer-line { font-family:monospace; font-size:18px; margin:4px 0; }
+  .answer-sheet h2 { text-align:center; margin-bottom:12px; }
+  .answer-day { margin-bottom:16px; padding:12px; background:#fef3c7; border-radius:8px; }
 
   @media print {
     body { padding:0; background:white; }
-    .control { display:none; }
-    .worksheet, .answer-sheet { margin:0; box-shadow:none; }
+    .control { display:none !important; }
+    .worksheet, .answer-sheet { box-shadow:none; margin:0; }
     @page { size:A4; margin:0; }
   }
 </style>
@@ -87,28 +127,34 @@
 <body>
 <div class="container">
 
-  <!-- 제어판 -->
   <div class="control">
     <div class="control-row">
-      <div>
-        <button class="btn btn-diff" id="btn1">1자리</button>
-        <button class="btn btn-diff active" id="btn2">2자리</button>
-        <button class="btn btn-diff" id="btn3">3자리</button>
+
+      <div class="controls-left">
+        <strong style="font-size:16px;">🧮 아빠표 연산 학습지 만들기</strong>
+        <div style="display:flex; gap:8px; margin-left:12px;">
+          <button class="btn btn-diff" id="btn-one">1자리</button>
+          <button class="btn btn-diff active" id="btn-two">2자리</button>
+          <button class="btn btn-diff" id="btn-three">3자리</button>
+        </div>
       </div>
 
-      <div>
-        <label style="font-weight:700;">일수</label>
-        <input id="days" type="number" value="1" min="1" max="30">
-        <button class="btn btn-main" id="gen">✨ 생성</button>
-        <button class="btn btn-reset" id="reset">↻ 초기화</button>
-        <button class="btn btn-answer" id="ans" disabled>📋 답안지</button>
-        <button class="btn btn-pdf" id="pdf" disabled>📥 PDF 저장</button>
+      <div class="controls-right">
+        <label style="font-weight:700; margin-right:6px;">생성 일수</label>
+        <input id="numDays" type="number" min="1" max="30" value="1" />
+
+        <button class="btn btn-generate" id="genBtn">✨ 문제 생성</button>
+        <button class="btn btn-reset" id="resetBtn">↻ 초기화</button>
+        <button class="btn btn-answer" id="answerBtn" disabled>📋 답안지</button>
+        <button class="btn btn-print" id="pdfBtn" disabled>📥 PDF 저장</button>
+        <button class="btn btn-print" id="printBtn" disabled>🖨️ 인쇄</button>
       </div>
+
     </div>
   </div>
 
   <div id="printArea"></div>
-  <div id="msg" class="message">문제를 생성하면 여기에 나타납니다.</div>
+  <div id="message" class="message">문제를 생성하면 여기에 미리보기가 나타납니다.</div>
 
 </div>
 
@@ -119,184 +165,188 @@
   let showAnswer = false;
 
   const ranges = {
-    one:{min:1,max:9},
-    two:{min:10,max:99},
-    three:{min:100,max:999}
+    one: { min:1, max:9 },
+    two: { min:10, max:99 },
+    three: { min:100, max:999 }
   };
+  function randomIn(r){ return Math.floor(Math.random()*(r.max-r.min+1))+r.min; }
 
-  const btn1=document.getElementById("btn1");
-  const btn2=document.getElementById("btn2");
-  const btn3=document.getElementById("btn3");
-  const gen=document.getElementById("gen");
-  const reset=document.getElementById("reset");
-  const ans=document.getElementById("ans");
-  const pdf=document.getElementById("pdf");
-  const daysInput=document.getElementById("days");
-  const printArea=document.getElementById("printArea");
-  const msg=document.getElementById("msg");
+  const btnOne = document.getElementById("btn-one");
+  const btnTwo = document.getElementById("btn-two");
+  const btnThree = document.getElementById("btn-three");
 
-  function selectDiff(level, btn){
-    difficulty=level;
-    [btn1,btn2,btn3].forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
+  const genBtn = document.getElementById("genBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const answerBtn = document.getElementById("answerBtn");
+  const pdfBtn = document.getElementById("pdfBtn");
+  const printBtn = document.getElementById("printBtn");
+  const numDays = document.getElementById("numDays");
+
+  const printArea = document.getElementById("printArea");
+  const message = document.getElementById("message");
+
+  function setDifficulty(d, el){
+    difficulty = d;
+    [btnOne, btnTwo, btnThree].forEach(b=>b.classList.remove("active"));
+    el.classList.add("active");
   }
-  btn1.onclick=()=>selectDiff('one',btn1);
-  btn2.onclick=()=>selectDiff('two',btn2);
-  btn3.onclick=()=>selectDiff('three',btn3);
 
-  function rand(r){ return Math.floor(Math.random()*(r.max-r.min+1))+r.min; }
+  btnOne.onclick = ()=> setDifficulty("one", btnOne);
+  btnTwo.onclick = ()=> setDifficulty("two", btnTwo);
+  btnThree.onclick = ()=> setDifficulty("three", btnThree);
 
-  function generate(){
-    worksheets=[];
-    const n=parseInt(daysInput.value)||1;
-    const r=ranges[difficulty];
+  genBtn.onclick = () => {
+    const d = ranges[difficulty];
+    const days = Math.min(30, Math.max(1, parseInt(numDays.value)||1));
+    worksheets = [];
 
-    for(let d=1; d<=n; d++){
-      let add=[], sub=[];
+    for(let day=1; day<=days; day++){
+      const add=[], sub=[];
       while(add.length<20){
-        let a=rand(r), b=rand(r);
+        const a=randomIn(d), b=randomIn(d);
         if(a%10===b%10) continue;
         add.push({a,b});
       }
       while(sub.length<20){
-        let a=rand(r), b=rand(r);
+        let a=randomIn(d), b=randomIn(d);
         if(a%10===b%10) continue;
         if(a<b) [a,b]=[b,a];
         sub.push({a,b});
       }
-      worksheets.push({day:d,add,sub});
+      worksheets.push({ day, add, sub });
     }
 
-    showAnswer=false;
-    ans.disabled=false;
-    pdf.disabled=false;
+    showAnswer = false;
     render();
-  }
-  gen.onclick=generate;
-
-  reset.onclick=()=>{
-    worksheets=[];
-    showAnswer=false;
-    printArea.innerHTML="";
-    msg.style.display="block";
-    ans.disabled=true;
-    pdf.disabled=true;
+    answerBtn.disabled = false;
+    pdfBtn.disabled = false;
+    printBtn.disabled = false;
   };
 
-  ans.onclick=()=>{ showAnswer=!showAnswer; render(); };
+  resetBtn.onclick = () => {
+    worksheets=[];
+    printArea.innerHTML="";
+    message.style.display="block";
+    answerBtn.disabled = true;
+    pdfBtn.disabled = true;
+    printBtn.disabled = true;
+  };
 
-  function renderWorksheet(day, arr, op, title){
-    const left=arr.slice(0,10);
-    const right=arr.slice(10,20);
+  answerBtn.onclick = () => {
+    showAnswer=!showAnswer;
+    render();
+  };
 
-    let h="";
-    h+=`<div class="worksheet">`;
-    h+=`<div class="ws-title"><span class="day-num">${day}</span>${title}</div>`;
-    h+=`<div class="ws-info">
-           <div>📅 <input class="info-field"> <input class="info-field"></div>
-           <div>🕐 <input class="info-field"> <input class="info-field"></div>
-        </div>`;
+  printBtn.onclick = () => window.print();
 
-    h+=`<div class="ws-content"><div class="columns">`;
+  pdfBtn.onclick = () => {
+    const element = document.getElementById("printArea");
+    const opt = {
+      margin: 0,
+      filename: "math_worksheet.pdf",
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      pagebreak: { mode: ['css', 'legacy'] }
+    };
+    html2pdf().set(opt).from(element).save();
+  };
 
-    h+=`<div class="left-grid">`;
+  function worksheetHTML(day, arr, op, title){
+    const left = arr.slice(0,10);
+    const right = arr.slice(10,20);
+
+    let h=`
+    <div class="worksheet">
+      <div class="ws-header">
+        <div class="ws-title"><span class="day-num">${day}</span>일차 - ${title}</div>
+      </div>
+
+      <div class="ws-info">
+        <div class="info-group">📅 <input class="info-field" placeholder="월"><input class="info-field" placeholder="일"></div>
+        <div class="info-group">🕐 <input class="info-field" placeholder="분"><input class="info-field" placeholder="초"></div>
+      </div>
+
+      <div class="ws-content">
+        <div class="columns">
+
+          <div class="left-grid">`;
+
     left.forEach(p=>{
       h+=`
       <div class="problem-cell">
         <div class="vertical-problem">
           <div class="num1">${p.a}</div>
-          <div>${op} ${p.b}</div>
+          <div class="op-row"><div class="op">${op}</div><div class="num2">${p.b}</div></div>
           <div class="line"></div>
           <div class="answer-space"></div>
         </div>
       </div>`;
     });
-    while(left.length<10){
-      h+=`<div class="problem-cell"></div>`;
-      left.push(null);
-    }
-    h+=`</div>`;
 
-    h+=`<div class="right-list">`;
+    for(let i=left.length;i<10;i++)
+      h+=`<div class="problem-cell"></div>`;
+
+    h+=`
+          </div>
+
+          <div class="right-list">`;
+
     right.forEach(p=>{
       h+=`
-      <div class="horizontal-problem">
-        <span>${p.a}</span><span>${op}</span><span>${p.b}</span><span>=</span>
-        <div class="answer-box"></div>
-      </div>`;
+          <div class="horizontal-problem">
+            <span>${p.a}</span><span>${op}</span><span>${p.b}</span><span>=</span>
+            <div class="answer-box"></div>
+          </div>`;
     });
-    while(right.length<10){
-      h+=`<div class="horizontal-problem"></div>`;
-      right.push(null);
-    }
-    h+=`</div>`;
 
-    h+=`</div></div>`;
-    h+=`<div class="ws-footer">eddie math</div>`;
-    h+=`</div>`;
+    for(let i=right.length;i<10;i++)
+      h+=`<div class="horizontal-problem"></div>`;
+
+    h+=`
+          </div>
+
+        </div>
+      </div>
+
+      <div class="ws-footer">eddie math</div>
+    </div>`;
+
     return h;
   }
 
-  function renderAnswer(){
-    let h=`<div class="answer-sheet">
-             <div class="answer-title">📋 연산 답안지</div>`;
+  function answerHTML(){
+    let h=`<div class="answer-sheet"><h2>📋 연산 답안지</h2>`;
     worksheets.forEach(ws=>{
-      h+=`<div class="answer-block">
-            <div class="answer-label">🟦 ${ws.day}일차 덧셈</div>`;
-      for(let i=0;i<20;i+=10){
-        h+=`<div class="answer-line">`;
-        h+=ws.add.slice(i,i+10)
-                .map((p,idx)=>`${i+idx+1}) ${p.a+p.b}`)
-                .join("    ");
-        h+=`</div>`;
-      }
-      h+=`<div class="answer-label" style="margin-top:12px;">🟧 ${ws.day}일차 뺄셈</div>`;
-      for(let i=0;i<20;i+=10){
-        h+=`<div class="answer-line">`;
-        h+=ws.sub.slice(i,i+10)
-                .map((p,idx)=>`${i+idx+1}) ${p.a-p.b}`)
-                .join("    ");
-        h+=`</div>`;
-      }
-      h+=`</div>`;
+      h+=`
+      <div class="answer-day">
+        <div>🟦 ${ws.day}일차 덧셈<br>${ws.add.map((p,i)=>`${i+1}) ${p.a+p.b}`).join('  ')}</div>
+        <br>
+        <div>🟧 ${ws.day}일차 뺄셈<br>${ws.sub.map((p,i)=>`${i+1}) ${p.a-p.b}`).join('  ')}</div>
+      </div>`;
     });
-    h+=`<div style="text-align:center;color:#aaa;margin-top:10px;">eddie math - 답안지</div></div>`;
+    h+=`</div>`;
     return h;
   }
 
   function render(){
-    if(!worksheets.length){
-      printArea.innerHTML="";
-      msg.style.display="block";
-      return;
-    }
-    msg.style.display="none";
+    if(worksheets.length===0){ message.style.display="block"; return; }
+    message.style.display="none";
 
     if(showAnswer){
-      printArea.innerHTML=renderAnswer();
+      printArea.innerHTML = answerHTML();
       return;
     }
 
     let out="";
     worksheets.forEach(ws=>{
-      out+=renderWorksheet(ws.day, ws.add, "+", "덧셈");
-      out+=renderWorksheet(ws.day, ws.sub, "−", "뺄셈");
+      out+=worksheetHTML(ws.day, ws.add, "+", "덧셈");
+      out+=worksheetHTML(ws.day, ws.sub, "−", "뺄셈");
     });
     printArea.innerHTML=out;
   }
 
-  pdf.onclick=()=>{
-    const element=document.getElementById('printArea');
-    const opt={
-      margin:0,
-      filename:"math_worksheet.pdf",
-      html2canvas:{scale:2},
-      jsPDF:{unit:"mm", format:"a4", orientation:"portrait"}
-    };
-    html2pdf().set(opt).from(element).save();
-  };
-
 })();
 </script>
+
 </body>
 </html>

@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>아빠표 연산 학습지 (A4 인쇄 최적화)</title>
 
-<!-- html2pdf (모바일 호환 가장 안정 버전) -->
-<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
-
 <style>
   * { box-sizing: border-box; margin:0; padding:0; }
   html,body { height:100%; }
@@ -69,6 +66,7 @@
     grid-template-rows:repeat(5, 1fr);
     border-right:2px solid #000;
   }
+
   .problem-cell {
     padding:12px; display:flex; align-items:center; justify-content:center;
     border-right:1px solid #e5e7eb; border-bottom:1px solid #e5e7eb;
@@ -112,8 +110,17 @@
     page-break-after:always;
   }
 
-  .answer-sheet h2 { text-align:center; margin-bottom:12px; }
-  .answer-day { margin-bottom:16px; padding:12px; background:#fef3c7; border-radius:8px; }
+  .answer-sheet h2 { text-align:center; margin-bottom:20px; }
+
+  .answer-day {
+    margin-bottom:26px; padding:12px;
+    background:#fef3c7; border-radius:8px;
+  }
+
+  .answer-line {
+    font-size:18px; font-weight:700;
+    margin-bottom:8px;
+  }
 
   @media print {
     body { padding:0; background:white; }
@@ -146,8 +153,7 @@
         <button class="btn btn-generate" id="genBtn">✨ 문제 생성</button>
         <button class="btn btn-reset" id="resetBtn">↻ 초기화</button>
         <button class="btn btn-answer" id="answerBtn" disabled>📋 답안지</button>
-        <button class="btn btn-print" id="pdfBtn" disabled>📥 PDF 저장</button>
-        <button class="btn btn-print" id="printBtn" disabled>🖨️ 인쇄</button>
+        <button class="btn btn-print" id="printBtn" disabled>🖨️ PC 인쇄</button>
       </div>
 
     </div>
@@ -169,6 +175,7 @@
     two: { min:10, max:99 },
     three: { min:100, max:999 }
   };
+
   function randomIn(r){ return Math.floor(Math.random()*(r.max-r.min+1))+r.min; }
 
   const btnOne = document.getElementById("btn-one");
@@ -178,7 +185,6 @@
   const genBtn = document.getElementById("genBtn");
   const resetBtn = document.getElementById("resetBtn");
   const answerBtn = document.getElementById("answerBtn");
-  const pdfBtn = document.getElementById("pdfBtn");
   const printBtn = document.getElementById("printBtn");
   const numDays = document.getElementById("numDays");
 
@@ -219,7 +225,6 @@
     showAnswer = false;
     render();
     answerBtn.disabled = false;
-    pdfBtn.disabled = false;
     printBtn.disabled = false;
   };
 
@@ -228,7 +233,6 @@
     printArea.innerHTML="";
     message.style.display="block";
     answerBtn.disabled = true;
-    pdfBtn.disabled = true;
     printBtn.disabled = true;
   };
 
@@ -238,18 +242,6 @@
   };
 
   printBtn.onclick = () => window.print();
-
-  pdfBtn.onclick = () => {
-    const element = document.getElementById("printArea");
-    const opt = {
-      margin: 0,
-      filename: "math_worksheet.pdf",
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      pagebreak: { mode: ['css', 'legacy'] }
-    };
-    html2pdf().set(opt).from(element).save();
-  };
 
   function worksheetHTML(day, arr, op, title){
     const left = arr.slice(0,10);
@@ -314,14 +306,28 @@
     return h;
   }
 
+  function makeAnswerBlock(label, problems) {
+    const line1 = problems.slice(0,10).map((p,i)=>`${i+1}) ${p}`).join("   ");
+    const line2 = problems.slice(10,20).map((p,i)=>`${i+11}) ${p}`).join("   ");
+
+    return `
+      <div class="answer-line"><strong>${label}</strong></div>
+      <div class="answer-line">${line1}</div>
+      <div class="answer-line">${line2}</div>
+    `;
+  }
+
   function answerHTML(){
     let h=`<div class="answer-sheet"><h2>📋 연산 답안지</h2>`;
     worksheets.forEach(ws=>{
+      const addAns = ws.add.map(p=>p.a+p.b);
+      const subAns = ws.sub.map(p=>p.a-p.b);
+
       h+=`
       <div class="answer-day">
-        <div>🟦 ${ws.day}일차 덧셈<br>${ws.add.map((p,i)=>`${i+1}) ${p.a+p.b}`).join('  ')}</div>
+        ${makeAnswerBlock(`🟦 ${ws.day}일차 덧셈`, addAns)}
         <br>
-        <div>🟧 ${ws.day}일차 뺄셈<br>${ws.sub.map((p,i)=>`${i+1}) ${p.a-p.b}`).join('  ')}</div>
+        ${makeAnswerBlock(`🟧 ${ws.day}일차 뺄셈`, subAns)}
       </div>`;
     });
     h+=`</div>`;
@@ -329,7 +335,11 @@
   }
 
   function render(){
-    if(worksheets.length===0){ message.style.display="block"; return; }
+    if(worksheets.length===0){
+      message.style.display="block";
+      printArea.innerHTML="";
+      return;
+    }
     message.style.display="none";
 
     if(showAnswer){

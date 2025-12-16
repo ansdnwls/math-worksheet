@@ -12,6 +12,17 @@
 
   .container { max-width:980px; margin:0 auto; }
 
+  .logo-container {
+    text-align:center;
+    margin-bottom:20px;
+  }
+  
+  .logo-container img {
+    max-width:450px;
+    width:100%;
+    height:auto;
+  }
+  
   .control {
     background:#fff; border-radius:12px;
     padding:16px; box-shadow:0 6px 18px rgba(0,0,0,.06);
@@ -38,9 +49,9 @@
   }
   
   .difficulty-buttons {
-    display:flex;
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
     gap:8px;
-    flex-wrap:wrap;
   }
   
   .actions-section {
@@ -69,11 +80,11 @@
 
   .btn { 
     border:0; 
-    padding:10px 14px; 
+    padding:14px 16px; 
     border-radius:8px; 
     cursor:pointer; 
     font-weight:700;
-    font-size:14px;
+    font-size:15px;
     transition: all 0.2s;
     white-space:nowrap;
   }
@@ -114,6 +125,11 @@
   .btn-print { 
     background:#111827; 
     color:#fff; 
+  }
+  
+  .btn-mobile-info {
+    background:#7c3aed;
+    color:#fff;
   }
 
   input[type=number] {
@@ -285,6 +301,107 @@
     word-break:break-all;
   }
 
+  /* 모달 스타일 */
+  .modal-overlay {
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    bottom:0;
+    background:rgba(0,0,0,0.5);
+    z-index:1000;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  
+  .modal-overlay.active {
+    display:flex;
+  }
+  
+  .modal-content {
+    background:#fff;
+    border-radius:12px;
+    padding:24px;
+    max-width:500px;
+    width:100%;
+    max-height:80vh;
+    overflow-y:auto;
+    box-shadow:0 20px 60px rgba(0,0,0,0.3);
+  }
+  
+  .modal-header {
+    font-size:20px;
+    font-weight:800;
+    margin-bottom:16px;
+    color:#7c3aed;
+    text-align:center;
+  }
+  
+  .modal-body {
+    font-size:14px;
+    line-height:1.8;
+    color:#374151;
+  }
+  
+  .modal-body p {
+    margin-bottom:12px;
+  }
+  
+  .modal-body strong {
+    color:#111827;
+    font-size:16px;
+    display:block;
+    margin-top:16px;
+    margin-bottom:8px;
+  }
+  
+  .modal-body ul {
+    margin-left:20px;
+    margin-bottom:12px;
+  }
+  
+  .modal-body li {
+    margin-bottom:6px;
+  }
+  
+  .copy-notice {
+    background:#dcfce7;
+    border:2px solid #16a34a;
+    border-radius:8px;
+    padding:12px;
+    margin:16px 0;
+    text-align:center;
+    font-weight:700;
+    color:#15803d;
+  }
+  
+  .modal-tip {
+    background:#fef3c7;
+    border-radius:8px;
+    padding:12px;
+    margin-top:16px;
+    font-weight:600;
+  }
+  
+  .modal-close {
+    background:#e5e7eb;
+    color:#374151;
+    border:none;
+    padding:12px;
+    border-radius:8px;
+    width:100%;
+    font-weight:700;
+    font-size:15px;
+    cursor:pointer;
+    margin-top:16px;
+  }
+  
+  .modal-close:active {
+    transform:scale(0.98);
+  }
+  
   /* 모바일 최적화 */
   @media (max-width: 768px) {
     body {
@@ -375,6 +492,8 @@
   @media print {
     body { padding:0; background:white; }
     .control { display:none !important; }
+    .logo-container { display:none !important; }
+    .modal-overlay { display:none !important; }
     .worksheet, .answer-sheet { 
       box-shadow:none; 
       margin:0;
@@ -400,8 +519,12 @@
 <body>
 <div class="container">
 
+  <div class="logo-container">
+    <img src="eddiemath.png" alt="Eddie Math Logo">
+  </div>
+
   <div class="control">
-    <span class="control-title">🧮 아빠표 연산 학습지 만들기 - 더하기/빼기</span>
+    <span class="control-title">🧮 에디아빠 연산 학습지 만들기 - 더하기/빼기</span>
     
     <div class="difficulty-section">
       <span class="difficulty-label">난이도 선택</span>
@@ -425,14 +548,49 @@
         <button class="btn btn-generate" id="genBtn">✨ 문제 생성</button>
         <button class="btn btn-reset" id="resetBtn">↻ 초기화</button>
         <button class="btn btn-answer" id="answerBtn" disabled>📋 답안지</button>
-        <button class="btn btn-print" id="printBtn" disabled>🖨️ 인쇄</button>
+        <button class="btn btn-print" id="printBtn" disabled>🖨️ PC 인쇄하기</button>
+        <button class="btn btn-mobile-info" id="mobileInfoBtn">📱 모바일 인쇄방법</button>
       </div>
     </div>
   </div>
 
   <div id="printArea"></div>
-  <div id="message" class="message">문제를 생성하면 여기에 미리보기가 나타납니다.</div>
+<div id="message" class="message">문제를 생성하면 여기에 미리보기가 나타납니다.</div>
 
+
+</div>
+
+<div class="modal-overlay" id="mobileModal">
+  <div class="modal-content">
+    <div class="modal-header">📱 모바일 인쇄 방법</div>
+    <div class="modal-body">
+      <div class="copy-notice">✅ 링크 주소가 복사되었습니다!</div>
+      
+      <p>본 프로그램은 아이폰은 정책 상 막혀있지만 <strong style="display:inline;">웨일</strong>과 <strong style="display:inline;">크롬</strong>에서는 출력이 가능합니다. 버튼을 누르면 링크 주소가 자동 복사되니 원하는 곳에 붙여넣어 주시고 사용바랍니다.</p>
+      
+      <strong>1️⃣ 웨일 브라우저</strong>
+      <ul>
+        <li>문제 생성 후 우측 제일 하단 버튼 누르기</li>
+        <li>공유 버튼 누르기</li>
+        <li>프린트 버튼 누르기</li>
+        <li>출력</li>
+      </ul>
+      
+      <strong>2️⃣ 크롬 브라우저</strong>
+      <ul>
+        <li>문제 생성 후 상단 링크주소 우측 끝 버튼 누르기</li>
+        <li>인쇄 버튼 누르기</li>
+        <li>출력</li>
+      </ul>
+      
+      <div class="modal-tip">
+        <strong style="margin:0;">💡 팁!!</strong><br>
+        • 원하는 페이지만 선택하여 출력이 가능합니다<br>
+        • 페이지 즐겨찾기 해주세요
+      </div>
+    </div>
+    <button class="modal-close" id="modalClose">닫기</button>
+  </div>
 </div>
 
 <script>
@@ -463,10 +621,14 @@
   const resetBtn = document.getElementById("resetBtn");
   const answerBtn = document.getElementById("answerBtn");
   const printBtn = document.getElementById("printBtn");
+  const mobileInfoBtn = document.getElementById("mobileInfoBtn");
   const numDays = document.getElementById("numDays");
 
   const printArea = document.getElementById("printArea");
   const message = document.getElementById("message");
+  
+  const mobileModal = document.getElementById("mobileModal");
+  const modalClose = document.getElementById("modalClose");
 
   function makeAB(difficulty, d) {
     if (difficulty === '3x2') {
@@ -560,6 +722,25 @@
   };
 
   printBtn.onclick = () => window.print();
+  
+  mobileInfoBtn.onclick = () => {
+    const url = "https://ansdnwls.github.io/math-worksheet/";
+    navigator.clipboard.writeText(url).then(() => {
+      mobileModal.classList.add("active");
+    }).catch(() => {
+      alert("링크 복사에 실패했습니다. 수동으로 복사해주세요:\n" + url);
+    });
+  };
+  
+  modalClose.onclick = () => {
+    mobileModal.classList.remove("active");
+  };
+  
+  mobileModal.onclick = (e) => {
+    if(e.target === mobileModal) {
+      mobileModal.classList.remove("active");
+    }
+  };
 
   function worksheetHTML(day, arr, op, title){
     const left = arr.slice(0,10);

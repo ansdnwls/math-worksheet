@@ -21,19 +21,6 @@
   .controls-left { display:flex; gap:10px; align-items:center; }
   .controls-right { display:flex; gap:8px; align-items:center; }
 
-  @media (max-width: 768px) {
-  .control-row,
-  .controls-left,
-  .controls-right {
-    flex-wrap: wrap;
-  }
-
-  .btn {
-    min-width: 70px;
-    font-size: 14px;
-  }
-}
-
   .btn { border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; }
   .btn-diff { background:#f3f4f6; color:#374151; }
   .btn-diff.active { background:#2563eb; color:#fff; box-shadow:0 4px 10px rgba(37,99,235,.14); }
@@ -141,6 +128,18 @@
     .worksheet, .answer-sheet { box-shadow:none; margin:0; }
     @page { size:A4; margin:0; }
   }
+
+ @media (max-width: 768px) {
+  .controls-left,
+  .controls-right {
+    flex-wrap: wrap; 
+  }
+
+  .btn {
+    min-width: 72px; 
+    font-size: 14px;
+  }
+}
 </style>
 </head>
 

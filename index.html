@@ -143,6 +143,10 @@
           <button class="btn btn-diff" id="btn-one">1자리</button>
           <button class="btn btn-diff active" id="btn-two">2자리</button>
           <button class="btn btn-diff" id="btn-three">3자리</button>
+          <button class="btn btn-diff" id="btn-four">4자리</button>
+          <button class="btn btn-diff" id="btn-3x2">3x2</button>
+          <button class="btn btn-diff" id="btn-4x3">4x3</button>
+
         </div>
       </div>
 
@@ -173,7 +177,10 @@
   const ranges = {
     one: { min:1, max:9 },
     two: { min:10, max:99 },
-    three: { min:100, max:999 }
+    three: { min:100, max:999 },
+    four: { min:1000, max:9999 },
+    '3x2': { minA:100, maxA:999, minB:10, maxB:99 },
+    '4x3': { minA:1000, maxA:9999, minB:100, maxB:999 }
   };
 
   function randomIn(r){ return Math.floor(Math.random()*(r.max-r.min+1))+r.min; }
@@ -181,6 +188,9 @@
   const btnOne = document.getElementById("btn-one");
   const btnTwo = document.getElementById("btn-two");
   const btnThree = document.getElementById("btn-three");
+  const btnFour = document.getElementById("btn-four");
+  const btn3x2 = document.getElementById("btn-3x2");
+  const btn4x3 = document.getElementById("btn-4x3");
 
   const genBtn = document.getElementById("genBtn");
   const resetBtn = document.getElementById("resetBtn");
@@ -191,15 +201,41 @@
   const printArea = document.getElementById("printArea");
   const message = document.getElementById("message");
 
-  function setDifficulty(d, el){
-    difficulty = d;
-    [btnOne, btnTwo, btnThree].forEach(b=>b.classList.remove("active"));
-    el.classList.add("active");
+function makeAB(difficulty, d) {
+  if (difficulty === '3x2') {
+    return {
+      a: randomIn({ min: 100, max: 999 }),
+      b: randomIn({ min: 10, max: 99 })
+    };
   }
+  if (difficulty === '4x3') {
+    return {
+      a: randomIn({ min: 1000, max: 9999 }),
+      b: randomIn({ min: 100, max: 999 })
+    };
+  }
+  // 1·2·3·4자리
+  return {
+    a: randomIn(d),
+    b: randomIn(d)
+  };
+}
+
+  function setDifficulty(d, el){
+  difficulty = d;
+  [btnOne, btnTwo, btnThree, btnFour, btn3x2, btn4x3].forEach(b => b.classList.remove("active"));
+  el.classList.add("active");
+}
+
 
   btnOne.onclick = ()=> setDifficulty("one", btnOne);
   btnTwo.onclick = ()=> setDifficulty("two", btnTwo);
   btnThree.onclick = ()=> setDifficulty("three", btnThree);
+  btnFour.onclick = () => setDifficulty("four", btnFour);
+  btn3x2.onclick = () => setDifficulty("3x2", btn3x2);
+  btn4x3.onclick = () => setDifficulty("4x3", btn4x3);
+
+
 
   genBtn.onclick = () => {
     const d = ranges[difficulty];
@@ -209,16 +245,41 @@
     for(let day=1; day<=days; day++){
       const add=[], sub=[];
       while(add.length<20){
-        const a=randomIn(d), b=randomIn(d);
-        if(a%10===b%10) continue;
-        add.push({a,b});
-      }
-      while(sub.length<20){
-        let a=randomIn(d), b=randomIn(d);
-        if(a%10===b%10) continue;
-        if(a<b) [a,b]=[b,a];
-        sub.push({a,b});
-      }
+  const { a, b } = makeAB(difficulty, d);
+  if(a % 10 === b % 10) continue;
+  if(a + b <= 9) continue; // 한 자리 수 결과 제거
+  add.push({a, b});
+}
+
+      function needsBorrow(a, b) {
+  return (a % 10) < (b % 10);
+}
+
+const targetBorrowRatio = 0.75;
+
+
+
+
+
+
+while(sub.length < 20) {
+  let { a, b } = makeAB(difficulty, d);
+  if (a < b) [a, b] = [b, a];
+  if (a % 10 === b % 10) continue;
+  if (a - b <= 9) continue; // ⭐ 한 자리 수 결과 제거
+
+
+  const isBorrow = needsBorrow(a, b);
+  const borrowCount = sub.filter(p => needsBorrow(p.a, p.b)).length;
+  const currentRatio = borrowCount / (sub.length || 1);
+
+  if (isBorrow && currentRatio < targetBorrowRatio) {
+    sub.push({ a, b });
+  } else if (!isBorrow && currentRatio >= targetBorrowRatio) {
+    sub.push({ a, b });
+  }
+}
+
       worksheets.push({ day, add, sub });
     }
 

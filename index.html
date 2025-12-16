@@ -8,7 +8,7 @@
 <style>
   * { box-sizing: border-box; margin:0; padding:0; }
   html,body { height:100%; }
-  body { font-family: Arial, Helvetica, sans-serif; background:#f3f4f6; padding:28px; }
+  body { font-family: Arial, Helvetica, sans-serif; background:#f3f4f6; padding:12px; }
 
   .container { max-width:980px; margin:0 auto; }
 
@@ -17,129 +17,383 @@
     padding:16px; box-shadow:0 6px 18px rgba(0,0,0,.06);
     margin-bottom:20px;
   }
-  .control-row { display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
-  .controls-left { display:flex; gap:10px; align-items:center; }
-  .controls-right { display:flex; gap:8px; align-items:center; }
-
-  .btn { border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; }
-  .btn-diff { background:#f3f4f6; color:#374151; }
-  .btn-diff.active { background:#2563eb; color:#fff; box-shadow:0 4px 10px rgba(37,99,235,.14); }
-  .btn-generate { background:#4f46e5; color:#fff; }
-  .btn-reset { background:#e5e7eb; color:#374151; }
-  .btn-answer { background:#16a34a; color:#fff; }
-  .btn-print { background:#111827; color:#fff; }
-
-  input[type=number] {
-    padding:8px; width:80px; border-radius:6px;
-    border:1px solid #d1d5db; text-align:center; font-weight:700;
+  
+  .control-title {
+    font-size:16px; 
+    font-weight:700;
+    margin-bottom:12px;
+    display:block;
+  }
+  
+  .difficulty-section {
+    margin-bottom:16px;
+  }
+  
+  .difficulty-label {
+    font-size:14px;
+    font-weight:600;
+    color:#6b7280;
+    margin-bottom:8px;
+    display:block;
+  }
+  
+  .difficulty-buttons {
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  
+  .actions-section {
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  
+  .input-group {
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  
+  .input-group label {
+    font-weight:600;
+    font-size:14px;
+    white-space:nowrap;
+  }
+  
+  .action-buttons {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
   }
 
-  .message { text-align:center; color:#9ca3af; padding:56px 0; }
+  .btn { 
+    border:0; 
+    padding:10px 14px; 
+    border-radius:8px; 
+    cursor:pointer; 
+    font-weight:700;
+    font-size:14px;
+    transition: all 0.2s;
+    white-space:nowrap;
+  }
+  
+  .btn:active {
+    transform: scale(0.98);
+  }
+  
+  .btn-diff { 
+    background:#f3f4f6; 
+    color:#374151;
+    flex: 1;
+    min-width:60px;
+  }
+  
+  .btn-diff.active { 
+    background:#2563eb; 
+    color:#fff; 
+    box-shadow:0 4px 10px rgba(37,99,235,.14); 
+  }
+  
+  .btn-generate { 
+    background:#4f46e5; 
+    color:#fff;
+    grid-column: 1 / -1;
+  }
+  
+  .btn-reset { 
+    background:#e5e7eb; 
+    color:#374151; 
+  }
+  
+  .btn-answer { 
+    background:#16a34a; 
+    color:#fff; 
+  }
+  
+  .btn-print { 
+    background:#111827; 
+    color:#fff; 
+  }
+
+  input[type=number] {
+    padding:10px;
+    flex:1;
+    border-radius:6px;
+    border:1px solid #d1d5db;
+    text-align:center;
+    font-weight:700;
+    font-size:14px;
+  }
+
+  .message { 
+    text-align:center; 
+    color:#9ca3af; 
+    padding:40px 20px;
+    font-size:14px;
+  }
 
   .worksheet {
-    width:210mm; min-height:297mm; padding:15mm;
-    margin:0 auto 18px; background:#fff;
+    width:100%;
+    max-width:210mm;
+    padding:15mm;
+    margin:0 auto 18px;
+    background:#fff;
     box-shadow:0 4px 10px rgba(0,0,0,.06);
-    page-break-after:always; display:block;
+    page-break-after:always;
+    display:block;
   }
 
   .ws-header { text-align:center; margin-bottom:8px; }
-  .ws-title { font-size:28px; font-weight:900; padding-bottom:8px; border-bottom:4px solid #e5e7eb; display:inline-block; }
-  .day-num { font-size:40px; color:#f59e0b; margin-right:8px; font-family:serif; }
+  .ws-title { 
+    font-size:24px; 
+    font-weight:900; 
+    padding-bottom:8px; 
+    border-bottom:4px solid #e5e7eb; 
+    display:inline-block; 
+  }
+  .day-num { 
+    font-size:32px; 
+    color:#f59e0b; 
+    margin-right:8px; 
+    font-family:serif; 
+  }
 
   .ws-info {
-    display:flex; justify-content:space-between;
-    margin-top:12px; margin-bottom:8px; gap:12px;
+    display:flex; 
+    justify-content:space-between;
+    margin-top:12px; 
+    margin-bottom:8px; 
+    gap:12px;
   }
   .info-group { display:flex; gap:8px; align-items:center; }
   .info-field {
-    width:48px; height:32px;
-    border:1px solid #cbd5e1; border-radius:6px;
-    text-align:center; font-weight:700;
+    width:48px; 
+    height:32px;
+    border:1px solid #cbd5e1; 
+    border-radius:6px;
+    text-align:center; 
+    font-weight:700;
   }
 
-  .ws-content { border-top:2px solid #000; border-bottom:2px solid #000; margin-top:8px; }
-  .columns { display:grid; grid-template-columns:1fr 1fr; }
+  .ws-content { 
+    border-top:2px solid #000; 
+    border-bottom:2px solid #000; 
+    margin-top:8px; 
+  }
+  
+  .columns { 
+    display:grid; 
+    grid-template-columns:1fr 1fr; 
+  }
 
   .left-grid {
-    display:grid; grid-template-columns:1fr 1fr;
+    display:grid; 
+    grid-template-columns:1fr 1fr;
     grid-template-rows:repeat(5, 1fr);
     border-right:2px solid #000;
   }
 
   .problem-cell {
-    padding:12px; display:flex; align-items:center; justify-content:center;
-    border-right:1px solid #e5e7eb; border-bottom:1px solid #e5e7eb;
+    padding:12px; 
+    display:flex; 
+    align-items:center; 
+    justify-content:center;
+    border-right:1px solid #e5e7eb; 
+    border-bottom:1px solid #e5e7eb;
   }
   .problem-cell:nth-child(2n) { border-right:none; }
   .problem-cell:nth-child(n+9) { border-bottom:none; }
 
   .vertical-problem {
-    font-family:monospace; font-size:28px; font-weight:800;
-    display:flex; flex-direction:column; align-items:flex-end;
+    font-family:monospace; 
+    font-size:24px; 
+    font-weight:800;
+    display:flex; 
+    flex-direction:column; 
+    align-items:flex-end;
   }
   .vertical-problem .num1 { margin-bottom:6px; }
-  .vertical-problem .op-row { display:flex; justify-content:flex-end; gap:8px; width:100%; }
+  .vertical-problem .op-row { 
+    display:flex; 
+    justify-content:flex-end; 
+    gap:8px; 
+    width:100%; 
+  }
   .vertical-problem .op { margin-right:auto; padding-right:8px; }
   .line { width:100%; border-top:2px solid #000; margin-top:8px; }
-  .answer-space { height:44px; }
+  .answer-space { height:40px; }
 
   .right-list {
-    display:grid; grid-template-rows:repeat(10, 1fr);
+    display:grid; 
+    grid-template-rows:repeat(10, 1fr);
     padding-left:12px;
   }
+  
   .horizontal-problem {
-    display:flex; align-items:center; padding-left:8px;
-    font-family:monospace; font-size:18px; font-weight:700;
+    display:flex; 
+    align-items:center; 
+    padding-left:8px;
+    font-family:monospace; 
+    font-size:16px; 
+    font-weight:700;
     border-bottom:1px solid #e5e7eb;
   }
   .horizontal-problem:last-child { border-bottom:none; }
   .horizontal-problem span { margin-right:8px; }
   .answer-box {
-    width:96px; height:36px;
-    border:2px solid #d1d5db; border-radius:6px;
-    margin-left:12px;
+    width:80px; 
+    height:32px;
+    border:2px solid #d1d5db; 
+    border-radius:6px;
+    margin-left:8px;
   }
 
-  .ws-footer { text-align:center; margin-top:8px; color:#9ca3af; font-weight:700; }
+  .ws-footer { 
+    text-align:center; 
+    margin-top:8px; 
+    color:#9ca3af; 
+    font-weight:700; 
+  }
 
   .answer-sheet {
-    width:210mm; min-height:297mm; padding:15mm;
-    margin:0 auto 18px; background:#fff;
+    width:100%;
+    max-width:210mm;
+    padding:15mm;
+    margin:0 auto 18px;
+    background:#fff;
     box-shadow:0 4px 10px rgba(0,0,0,.06);
     page-break-after:always;
   }
 
-  .answer-sheet h2 { text-align:center; margin-bottom:20px; }
+  .answer-sheet h2 { 
+    text-align:center; 
+    margin-bottom:20px; 
+  }
 
   .answer-day {
-    margin-bottom:26px; padding:12px;
-    background:#fef3c7; border-radius:8px;
+    margin-bottom:26px; 
+    padding:12px;
+    background:#fef3c7; 
+    border-radius:8px;
   }
 
   .answer-line {
-    font-size:18px; font-weight:700;
+    font-size:16px; 
+    font-weight:700;
     margin-bottom:8px;
+    word-break:break-all;
+  }
+
+  /* 모바일 최적화 */
+  @media (max-width: 768px) {
+    body {
+      padding:8px;
+    }
+    
+    .control {
+      padding:12px;
+    }
+    
+    .control-title {
+      font-size:15px;
+    }
+    
+    .btn {
+      font-size:13px;
+      padding:9px 12px;
+    }
+    
+    .worksheet {
+      padding:10mm;
+    }
+    
+    .ws-title {
+      font-size:20px;
+    }
+    
+    .day-num {
+      font-size:28px;
+    }
+    
+    .vertical-problem {
+      font-size:20px;
+    }
+    
+    .horizontal-problem {
+      font-size:14px;
+    }
+    
+    .answer-box {
+      width:70px;
+      height:28px;
+    }
+    
+    .answer-line {
+      font-size:14px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .columns {
+      grid-template-columns:1fr;
+    }
+    
+    .left-grid {
+      border-right:none;
+      border-bottom:2px solid #000;
+    }
+    
+    .right-list {
+      padding-left:0;
+      padding-top:12px;
+    }
+    
+    .ws-title {
+      font-size:18px;
+    }
+    
+    .day-num {
+      font-size:24px;
+    }
+    
+    .info-field {
+      width:40px;
+      height:28px;
+      font-size:12px;
+    }
+    
+    .vertical-problem {
+      font-size:18px;
+    }
+    
+    .answer-space {
+      height:32px;
+    }
   }
 
   @media print {
     body { padding:0; background:white; }
     .control { display:none !important; }
-    .worksheet, .answer-sheet { box-shadow:none; margin:0; }
+    .worksheet, .answer-sheet { 
+      box-shadow:none; 
+      margin:0;
+      width:210mm;
+      min-height:297mm;
+    }
+    .columns {
+      grid-template-columns:1fr 1fr !important;
+    }
+    .left-grid {
+      border-right:2px solid #000 !important;
+      border-bottom:none !important;
+    }
+    .right-list {
+      padding-left:12px !important;
+      padding-top:0 !important;
+    }
     @page { size:A4; margin:0; }
   }
-
- @media (max-width: 768px) {
-  .controls-left,
-  .controls-right {
-    flex-wrap: wrap; 
-  }
-
-  .btn {
-    min-width: 72px; 
-    font-size: 14px;
-  }
-}
 </style>
 </head>
 
@@ -147,31 +401,32 @@
 <div class="container">
 
   <div class="control">
-    <div class="control-row">
-
-      <div class="controls-left">
-        <strong style="font-size:16px;">🧮 아빠표 연산 학습지 만들기</strong>
-        <div style="display:flex; gap:8px; margin-left:12px;">
-          <button class="btn btn-diff" id="btn-one">1자리</button>
-          <button class="btn btn-diff active" id="btn-two">2자리</button>
-          <button class="btn btn-diff" id="btn-three">3자리</button>
-          <button class="btn btn-diff" id="btn-four">4자리</button>
-          <button class="btn btn-diff" id="btn-3x2">3x2</button>
-          <button class="btn btn-diff" id="btn-4x3">4x3</button>
-
-        </div>
+    <span class="control-title">🧮 아빠표 연산 학습지 만들기 - 더하기/빼기</span>
+    
+    <div class="difficulty-section">
+      <span class="difficulty-label">난이도 선택</span>
+      <div class="difficulty-buttons">
+        <button class="btn btn-diff" id="btn-one">1자리수</button>
+        <button class="btn btn-diff active" id="btn-two">2자리수</button>
+        <button class="btn btn-diff" id="btn-three">3자리수</button>
+        <button class="btn btn-diff" id="btn-four">4자리수</button>
+        <button class="btn btn-diff" id="btn-3x2">3 x 2</button>
+        <button class="btn btn-diff" id="btn-4x3">4 x 3</button>
       </div>
-
-      <div class="controls-right">
-        <label style="font-weight:700; margin-right:6px;">생성 일수</label>
+    </div>
+    
+    <div class="actions-section">
+      <div class="input-group">
+        <label>생성 일수</label>
         <input id="numDays" type="number" min="1" max="30" value="1" />
-
+      </div>
+      
+      <div class="action-buttons">
         <button class="btn btn-generate" id="genBtn">✨ 문제 생성</button>
         <button class="btn btn-reset" id="resetBtn">↻ 초기화</button>
         <button class="btn btn-answer" id="answerBtn" disabled>📋 답안지</button>
-        <button class="btn btn-print" id="printBtn" disabled>🖨️ PC 인쇄</button>
+        <button class="btn btn-print" id="printBtn" disabled>🖨️ 인쇄</button>
       </div>
-
     </div>
   </div>
 
@@ -213,32 +468,30 @@
   const printArea = document.getElementById("printArea");
   const message = document.getElementById("message");
 
-function makeAB(difficulty, d) {
-  if (difficulty === '3x2') {
+  function makeAB(difficulty, d) {
+    if (difficulty === '3x2') {
+      return {
+        a: randomIn({ min: 100, max: 999 }),
+        b: randomIn({ min: 10, max: 99 })
+      };
+    }
+    if (difficulty === '4x3') {
+      return {
+        a: randomIn({ min: 1000, max: 9999 }),
+        b: randomIn({ min: 100, max: 999 })
+      };
+    }
     return {
-      a: randomIn({ min: 100, max: 999 }),
-      b: randomIn({ min: 10, max: 99 })
+      a: randomIn(d),
+      b: randomIn(d)
     };
   }
-  if (difficulty === '4x3') {
-    return {
-      a: randomIn({ min: 1000, max: 9999 }),
-      b: randomIn({ min: 100, max: 999 })
-    };
-  }
-  // 1·2·3·4자리
-  return {
-    a: randomIn(d),
-    b: randomIn(d)
-  };
-}
 
   function setDifficulty(d, el){
-  difficulty = d;
-  [btnOne, btnTwo, btnThree, btnFour, btn3x2, btn4x3].forEach(b => b.classList.remove("active"));
-  el.classList.add("active");
-}
-
+    difficulty = d;
+    [btnOne, btnTwo, btnThree, btnFour, btn3x2, btn4x3].forEach(b => b.classList.remove("active"));
+    el.classList.add("active");
+  }
 
   btnOne.onclick = ()=> setDifficulty("one", btnOne);
   btnTwo.onclick = ()=> setDifficulty("two", btnTwo);
@@ -246,8 +499,6 @@ function makeAB(difficulty, d) {
   btnFour.onclick = () => setDifficulty("four", btnFour);
   btn3x2.onclick = () => setDifficulty("3x2", btn3x2);
   btn4x3.onclick = () => setDifficulty("4x3", btn4x3);
-
-
 
   genBtn.onclick = () => {
     const d = ranges[difficulty];
@@ -257,40 +508,34 @@ function makeAB(difficulty, d) {
     for(let day=1; day<=days; day++){
       const add=[], sub=[];
       while(add.length<20){
-  const { a, b } = makeAB(difficulty, d);
-  if(a % 10 === b % 10) continue;
-  if(a + b <= 9) continue; // 한 자리 수 결과 제거
-  add.push({a, b});
-}
+        const { a, b } = makeAB(difficulty, d);
+        if(a % 10 === b % 10) continue;
+        if(a + b <= 9) continue;
+        add.push({a, b});
+      }
 
       function needsBorrow(a, b) {
-  return (a % 10) < (b % 10);
-}
+        return (a % 10) < (b % 10);
+      }
 
-const targetBorrowRatio = 0.75;
+      const targetBorrowRatio = 0.75;
 
+      while(sub.length < 20) {
+        let { a, b } = makeAB(difficulty, d);
+        if (a < b) [a, b] = [b, a];
+        if (a % 10 === b % 10) continue;
+        if (a - b <= 9) continue;
 
+        const isBorrow = needsBorrow(a, b);
+        const borrowCount = sub.filter(p => needsBorrow(p.a, p.b)).length;
+        const currentRatio = borrowCount / (sub.length || 1);
 
-
-
-
-while(sub.length < 20) {
-  let { a, b } = makeAB(difficulty, d);
-  if (a < b) [a, b] = [b, a];
-  if (a % 10 === b % 10) continue;
-  if (a - b <= 9) continue; // ⭐ 한 자리 수 결과 제거
-
-
-  const isBorrow = needsBorrow(a, b);
-  const borrowCount = sub.filter(p => needsBorrow(p.a, p.b)).length;
-  const currentRatio = borrowCount / (sub.length || 1);
-
-  if (isBorrow && currentRatio < targetBorrowRatio) {
-    sub.push({ a, b });
-  } else if (!isBorrow && currentRatio >= targetBorrowRatio) {
-    sub.push({ a, b });
-  }
-}
+        if (isBorrow && currentRatio < targetBorrowRatio) {
+          sub.push({ a, b });
+        } else if (!isBorrow && currentRatio >= targetBorrowRatio) {
+          sub.push({ a, b });
+        }
+      }
 
       worksheets.push({ day, add, sub });
     }
